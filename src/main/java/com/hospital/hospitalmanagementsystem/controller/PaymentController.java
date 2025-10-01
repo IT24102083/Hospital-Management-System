@@ -1,0 +1,404 @@
+package com.hospital.hospitalmanagementsystem.controller;
+
+import com.hospital.hospitalmanagementsystem.model.*;
+import com.hospital.hospitalmanagementsystem.service.InvoiceService;
+import com.hospital.hospitalmanagementsystem.service.PatientService;
+import com.hospital.hospitalmanagementsystem.service.PaymentService;
+import com.hospital.hospitalmanagementsystem.service.PaymentPlanService;
+import com.hospital.hospitalmanagementsystem.service.UserService;
+import com.hospital.hospitalmanagementsystem.service.external.FileStorageService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+import java.math.BigDecimal;
+import java.security.Principal;
+import java.util.List;
+import java.util.Optional;
+
+@Controller
+public class PaymentController {
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @Autowired
+    private InvoiceService invoiceService;
+
+    @Autowired
+    private PatientService patientService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private PaymentPlanService paymentPlanService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    // Unified patient lookup method
+    private Patient getPatientFromPrincipal(Principal principal) {
+        try {
+            // First try to get by username (most common case)
+            Optional<User> userOpt = userService.getUserByUsername(principal.getName());
+            if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.ROLE_PATIENT) {
+                Optional<Patient> patientOpt = patientService.getPatientById(userOpt.get().getId());
+                if (patientOpt.isPresent()) {
+                    return patientOpt.get();
+                }
+            }
+
+            // Fallback: try to find by email
+            List<Patient> allPatients = patientService.getAllPatients();
+            return allPatients.stream()
+                    .filter(p -> p.getEmail() != null && p.getEmail().equals(principal.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Patient account not found for user: " + principal.getName()));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to access patient account", e);
+        }
+    }
+
+    // ========== PAYMENT PROCESSING ENDPOINTS ==========
+
+    @GetMapping("/patient/invoices/{invoiceId}/pay")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showPaymentMethods(@PathVariable Long invoiceId, Model model, Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(invoiceId)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + invoiceId));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            if (invoice.getStatus() == Invoice.InvoiceStatus.PAID) {
+                model.addAttribute("message", "This invoice has already been paid.");
+                return "redirect:/patient/invoices/" + invoiceId;
+            }
+
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+            model.addAttribute("availablePaymentMethods", getAvailablePaymentMethods());
+
+            return "home/billing/payment-method-selection";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load payment methods: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @GetMapping("/patient/invoices/{id}/pay/card")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showCardPaymentPage(@PathVariable Long id, Model model, Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+            model.addAttribute("paymentAmount", invoice.getBalanceDue());
+
+            return "home/billing/card-payment-portal";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load card payment form: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @PostMapping("/patient/invoices/{id}/pay/card")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String processCardPayment(@PathVariable Long id,
+                                     @RequestParam String cardNumber,
+                                     @RequestParam String cardName,
+                                     @RequestParam String cardExpiry,
+                                     @RequestParam String cardCvc,
+                                     @RequestParam String billingAddress,
+                                     @RequestParam String billingCity,
+                                     @RequestParam String billingZip,
+                                     @RequestParam(required = false) boolean saveCard,
+                                     RedirectAttributes redirectAttributes,
+                                     Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            Payment.CreateRequest request = new Payment.CreateRequest();
+            request.setInvoiceId(id);
+            request.setAmount(invoice.getBalanceDue());
+            request.setPaymentMethod(String.valueOf(Payment.PaymentMethod.CREDIT_CARD));
+            request.setCardNumber(cardNumber);
+            request.setCardName(cardName);
+            request.setCardExpiry(cardExpiry);
+            request.setCardCvc(cardCvc);
+
+            Payment payment = paymentService.processCardPayment(request);
+
+            if (payment.getStatus() == Payment.PaymentStatus.COMPLETED) {
+                redirectAttributes.addFlashAttribute("success", "Payment processed successfully!");
+                // FIXED: Correct redirect URL to the payment success page
+                return "redirect:/patient/invoices/" + id + "/payment-success?paymentId=" + payment.getId();
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Payment failed. Please try again.");
+                // FIXED: Correct redirect URL back to the card payment page
+                return "redirect:/patient/invoices/" + id + "/pay/card";
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Payment processing error: " + e.getMessage());
+            // FIXED: Correct redirect URL back to the card payment page on exception
+            return "redirect:/patient/invoices/" + id + "/pay/card";
+        }
+    }
+
+    @GetMapping("/patient/invoices/{id}/pay/bank-transfer")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showBankTransferPage(@PathVariable Long id, Model model, Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+            model.addAttribute("bankDetails", getBankAccountDetails());
+
+            return "home/billing/bank-transfer-payment";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load bank transfer form: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @PostMapping("/patient/invoices/{id}/pay/bank-transfer")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String processBankTransferPayment(@PathVariable Long id,
+                                             @RequestParam BigDecimal amount,
+                                             @RequestParam String referenceNumber,
+                                             @RequestParam(required = false) MultipartFile receiptFile,
+                                             @RequestParam(required = false) String transferNotes,
+                                             RedirectAttributes redirectAttributes,
+                                             Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            Payment payment = paymentService.processBankTransferPayment(
+                    id, amount, referenceNumber, receiptFile, transferNotes);
+
+            redirectAttributes.addFlashAttribute("success",
+                    "Bank transfer receipt uploaded successfully. Your payment is being verified.");
+            return "redirect:/patient/invoices/" + id + "/bank-transfer-pending?paymentId=" + payment.getId();
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error processing bank transfer: " + e.getMessage());
+            return "redirect:/patient/invoices/" + id + "/pay/bank-transfer";
+        }
+    }
+
+    // UPDATED: Fixed incorrect view path
+    @GetMapping("/patient/invoices/{id}/payment-success")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showPaymentSuccess(@PathVariable Long id,
+                                     @RequestParam Long paymentId,
+                                     Model model,
+                                     Principal principal) {
+        try {
+            Payment payment = paymentService.getPaymentById(paymentId);
+            Invoice invoice = payment.getInvoice();
+            Patient patient = getPatientFromPrincipal(principal);
+
+            // Validate that the payment belongs to the logged-in patient
+            validatePatientOwnership(invoice, patient);
+
+            model.addAttribute("payment", payment);
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+
+            // FIXED: Return path is now consistent with other billing views.
+            return "home/billing/payment-success";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load payment confirmation: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @GetMapping("/patient/invoices/{id}/receipt")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showReceipt(@PathVariable Long id,
+                              @RequestParam(required = false) Long paymentId,
+                              Model model,
+                              Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            Payment payment = null;
+            if (paymentId != null) {
+                payment = paymentService.getPaymentById(paymentId);
+            } else {
+                // If no specific paymentId, find the latest completed one for this invoice
+                List<Payment> payments = paymentService.getPaymentsByInvoiceId(id);
+                payment = payments.stream()
+                        .filter(p -> p.getStatus() == Payment.PaymentStatus.COMPLETED)
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (payment == null) {
+                model.addAttribute("error", "No completed payment found for this invoice");
+                return "home/error";
+            }
+
+            model.addAttribute("payment", payment);
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+
+            return "home/billing/receipt-generator";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load receipt: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @GetMapping("/patient/invoices/{id}/receipt/download")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<byte[]> downloadReceipt(@PathVariable Long id,
+                                                  @RequestParam(required = false) Long paymentId,
+                                                  Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            Payment payment = null;
+            if (paymentId != null) {
+                payment = paymentService.getPaymentById(paymentId);
+            } else {
+                List<Payment> payments = paymentService.getPaymentsByInvoiceId(id);
+                payment = payments.stream()
+                        .filter(p -> p.getStatus() == Payment.PaymentStatus.COMPLETED)
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (payment == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            byte[] pdfData = fileStorageService.generateReceiptPDF(payment);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment",
+                    "receipt_" + generateReceiptNumber(payment) + ".pdf");
+
+            return new ResponseEntity<>(pdfData, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ========== PAYMENT PLAN ENDPOINTS ==========
+
+    @GetMapping("/patient/invoices/{id}/setup-payment-plan")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String showPaymentPlanSetup(@PathVariable Long id, Model model, Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            if (invoice.getStatus() == Invoice.InvoiceStatus.PAID) {
+                model.addAttribute("message", "This invoice has already been paid.");
+                return "redirect:home/patient/invoices/" + id;
+            }
+
+            model.addAttribute("invoice", invoice);
+            model.addAttribute("patient", patient);
+            model.addAttribute("paymentPlanRequest", new PaymentPlan.CreateRequest());
+            model.addAttribute("maxInstallments", 12);
+
+            return "home/billing/payment-plan-setup";
+        } catch (Exception e) {
+            model.addAttribute("error", "Unable to load payment plan setup: " + e.getMessage());
+            return "home/error";
+        }
+    }
+
+    @PostMapping("/patient/invoices/{id}/setup-payment-plan")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String createPaymentPlan(@PathVariable Long id,
+                                    @Valid @ModelAttribute PaymentPlan.CreateRequest request,
+                                    RedirectAttributes redirectAttributes,
+                                    Principal principal) {
+        try {
+            Invoice invoice = invoiceService.getInvoiceById(id)
+                    .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+            Patient patient = getPatientFromPrincipal(principal);
+
+            validatePatientOwnership(invoice, patient);
+
+            PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(id, request);
+            redirectAttributes.addFlashAttribute("success",
+                    "Payment plan created successfully! Your first payment is due on " +
+                            paymentPlanService.getFirstPaymentDate(paymentPlan));
+
+            return "redirect:/patient/invoices/" + id;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error creating payment plan: " + e.getMessage());
+            return "redirect:/patient/invoices/" + id + "/setup-payment-plan";
+        }
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private void validatePatientOwnership(Invoice invoice, Patient patient) {
+        if (!invoice.getPatient().getId().equals(patient.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to this invoice");
+        }
+    }
+
+    private List<String> getAvailablePaymentMethods() {
+        // In a real app, this might be configured elsewhere
+        return List.of("CREDIT_CARD", "BANK_TRANSFER");
+    }
+
+    private Object getBankAccountDetails() {
+        // In a real app, this would come from a configuration or service
+        return new Object();
+    }
+
+    private String generateReceiptNumber(Payment payment) {
+        return "RCP-" + payment.getId() + "-" + payment.getTransactionId().substring(Math.max(0, payment.getTransactionId().length() - 5));
+    }
+}
