@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${pageTitle ?: 'Receptionist Dashboard'} + ' - HealthFirst'"></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        /* Styles from original file */
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link.active { color: #2563eb; font-weight: 600; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(239, 246, 255, 0.8) 0%, rgba(219, 234, 254, 0.1) 100%); }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+
+        <div class="hidden md:flex items-center space-x-8">
+            <a href="/dashboard" class="nav-link text-gray-700 font-medium active">Dashboard</a>
+            <a href="/appointments/book" class="nav-link text-gray-700 font-medium">Book Appointment</a>
+            <a href="/dashboard?view=register" class="nav-link text-gray-700 font-medium">Register Patient</a>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                    <span class="font-medium" th:text="${user != null ? user.firstName : 'Receptionist'}">Receptionist</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-user-circle mr-2"></i>My Profile
+                    </a>
+                    <div class="border-t border-gray-100 my-1"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-600 hover:text-blue-600 focus:outline-none">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+        <a href="/dashboard" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+        <a href="/appointments/book" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Book Appointment</a>
+        <a href="/dashboard?view=register" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Register Patient</a>
+    </div>
+</nav>
+
+<main class="min-h-screen pt-28 pb-16 hero-gradient">
+    <div class="container mx-auto px-4">
+
+        <div th:if="${currentView == 'dashboard'}">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Manage Appointments</h1>
+                    <p class="text-lg text-gray-600">Filter appointments or create new ones.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a th:href="@{/dashboard(view='register')}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-full flex items-center space-x-2 transition-colors">
+                        <i class="fas fa-user-plus"></i> <span>Register Patient</span>
+                    </a>
+                    <a href="/appointments/book" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-full flex items-center space-x-2 transition-colors">
+                        <i class="fas fa-plus"></i> <span>Book Appointment</span>
+                    </a>
+                </div>
+            </div>
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg">
+                        <p class="text-gray-500 font-medium">Total Patients</p>
+                        <p class="text-4xl font-bold text-gray-800" th:text="${patientCount ?: '0'}">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg">
+                        <p class="text-gray-500 font-medium">Total Appointments</p>
+                        <p class="text-4xl font-bold text-gray-800" th:text="${appointmentCount ?: '0'}">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg">
+                        <p class="text-gray-500 font-medium">Today's Appointments</p>
+                        <p class="text-4xl font-bold text-gray-800" th:text="${#lists.size(todaysAppointments ?: {})}">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-4 mb-6">
+                    <form th:action="@{/dashboard}" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <input type="text" name="patientName" placeholder="Patient Name..." th:value="${patientName}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <input type="text" name="doctorName" placeholder="Doctor Name..." th:value="${doctorName}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <input type="date" name="date" th:value="${date}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 w-full transition-colors">Filter</button>
+                    </form>
+                </div>
+
+                <div th:if="${successMessage}" class="bg-green-100 text-green-700 p-4 mb-4 rounded-lg" th:text="${successMessage}"></div>
+
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 text-gray-600 uppercase text-sm">
+                            <tr>
+                                <th class="p-4 font-semibold">Patient</th>
+                                <th class="p-4 font-semibold">Date & Time</th>
+                                <th class="p-4 font-semibold">Doctor</th>
+                                <th class="p-4 font-semibold">Status</th>
+                                <th class="p-4 font-semibold text-right">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                            <tr th:each="appt : ${appointments}" class="hover:bg-gray-50">
+                                <td class="p-4 font-medium text-gray-800" th:text="${appt.patient.firstName + ' ' + appt.patient.lastName}"></td>
+                                <td class="p-4">
+                                    <div th:text="${#temporals.format(appt.appointmentDate, 'MMM dd, yyyy')}"></div>
+                                    <div class="text-sm text-gray-500" th:text="${#temporals.format(appt.appointmentTime, 'hh:mm a')}"></div>
+                                </td>
+                                <td class="p-4" th:text="${'Dr. ' + appt.doctor.firstName + ' ' + appt.doctor.lastName}"></td>
+                                <td class="p-4"><span class="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-full" th:text="${appt.status}">SCHEDULED</span></td>
+                                <td class="p-4 text-right space-x-2">
+                                    <a th:href="@{/dashboard(view='edit', id=${appt.id})}" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-3 rounded-full text-xs transition-colors">Edit</a>
+                                    <a th:href="@{/appointments/cancel/{id}(id=${appt.id})}" class="bg-red-100 hover:bg-red-200 text-red-800 font-bold py-2 px-3 rounded-full text-xs transition-colors" onclick="return confirm('Cancel this appointment?')">Cancel</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(appointments)}">
+                                <td colspan="5" class="p-8 text-center text-gray-500">No appointments found for the selected criteria.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'register'}">
+            <div class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Register New Patient</h2>
+                <form th:action="@{/dashboard/patients/register}" th:object="${patient}" method="post" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" th:field="*{firstName}" placeholder="First Name" class="w-full px-4 py-2 border rounded-lg" required>
+                        <input type="text" th:field="*{lastName}" placeholder="Last Name" class="w-full px-4 py-2 border rounded-lg" required>
+                        <input type="email" th:field="*{email}" placeholder="Email" class="w-full px-4 py-2 border rounded-lg" required>
+                        <input type="text" th:field="*{phoneNumber}" placeholder="Phone Number" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" th:field="*{username}" placeholder="Username" class="w-full px-4 py-2 border rounded-lg" required>
+                        <input type="password" th:field="*{password}" placeholder="Password" class="w-full px-4 py-2 border rounded-lg" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="date" th:field="*{dateOfBirth}" class="w-full px-4 py-2 border rounded-lg" required>
+                        <select th:field="*{gender}" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="">Select Gender...</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 w-full text-white font-bold py-3 px-6 rounded-full transition-colors">Register Patient</button>
+                        <a th:href="@{/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'edit'}">
+            <div class="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Edit Appointment</h2>
+                <p class="text-gray-600 mb-8" th:text="${'For: ' + appointment.patient.firstName + ' ' + appointment.patient.lastName}"></p>
+                <form th:action="@{/dashboard/appointments/edit}" th:object="${appointment}" method="post" class="space-y-6">
+                    <input type="hidden" th:field="*{id}" />
+                    <input type="hidden" th:field="*{patient}" />
+                    <select id="doctor" th:field="*{doctor}" class="w-full px-4 py-2 border rounded-lg" required>
+                        <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
+                    </select>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <input type="date" th:field="*{appointmentDate}" class="w-full px-4 py-2 border rounded-lg" required>
+                        <input type="time" th:field="*{appointmentTime}" class="w-full px-4 py-2 border rounded-lg" required>
+                    </div>
+                    <select th:field="*{status}" class="w-full px-4 py-2 border rounded-lg">
+                        <option th:each="s : ${T(com.hospital.hospitalmanagementsystem.model.Appointment.Status).values()}" th:value="${s}" th:text="${s}"></option>
+                    </select>
+                    <textarea th:field="*{reason}" rows="3" placeholder="Reason for visit..." class="w-full px-4 py-2 border rounded-lg"></textarea>
+                    <textarea th:field="*{notes}" rows="2" placeholder="Additional notes..." class="w-full px-4 py-2 border rounded-lg"></textarea>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 w-full text-white font-bold py-3 px-6 rounded-full transition-colors">Save Changes</button>
+                        <a th:href="@{/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        // Logic for User Dropdown Menu
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Logic for Mobile Hamburger Menu
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Hide menus if clicking outside of them
+        document.addEventListener('click', function(event) {
+            if (userMenuBtn && userMenu && !userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+            if (mobileMenuButton && mobileMenu && !mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    });
+</script>
+</body>
+</html>

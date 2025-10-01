@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Invoices - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        .hero-gradient { background: linear-gradient(135deg, rgba(239, 246, 255, 0.8) 0%, rgba(224, 231, 255, 0.1) 100%); }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav class="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-sm shadow-sm">
+    <div class="container mx-auto flex justify-between items-center py-3 px-4">
+        <a th:href="@{/}" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+
+        <div class="hidden md:flex space-x-8">
+            <a th:href="@{/}" class="text-gray-700 hover:text-blue-600 font-medium">Home</a>
+            <a th:href="@{/pharmacy}" class="text-gray-700 hover:text-blue-600 font-medium">Pharmacy</a>
+            <a th:href="@{/services}" class="text-gray-700 hover:text-blue-600 font-medium">Services</a>
+            <a th:href="@{/about}" class="text-gray-700 hover:text-blue-600 font-medium">About Us</a>
+            <a th:href="@{/contact}" class="text-gray-700 hover:text-blue-600 font-medium">Contact</a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <div sec:authorize="isAnonymous()">
+                <a th:href="@{/login}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium transition">Login</a>
+                <a th:href="@{/register}" class="bg-white text-blue-600 border border-blue-600 px-5 py-2 rounded-full font-medium hover:bg-blue-50 transition hidden sm:inline-block">Register</a>
+            </div>
+
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/dashboard}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium transition">Dashboard</a>
+                <form th:action="@{/logout}" method="post" class="hidden sm:inline-block">
+                    <button type="submit" class="bg-white text-red-500 border border-red-500 px-5 py-2 rounded-full font-medium hover:bg-red-50 transition">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">My Invoices</h1>
+                <a href="/dashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="invoice : ${invoices}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600" th:text="${invoice.invoiceNumber}">INV-2024-001</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#temporals.format(invoice.issueDate, 'MMM dd, yyyy')}">Jan 15, 2024</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#temporals.format(invoice.dueDate, 'MMM dd, yyyy')}">Feb 15, 2024</td>
+                            <td class="px-6 py-4 text-sm text-gray-700" th:text="${invoice.description}">General Consultation</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" th:text="'$' + ${#numbers.formatDecimal(invoice.total, 1, 2)}">$200.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span th:switch="${invoice.status}" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                        <span th:case="'PAID'" class="bg-green-100 text-green-800">Paid</span>
+                                        <span th:case="'PENDING'" class="bg-yellow-100 text-yellow-800">Pending</span>
+                                        <span th:case="'OVERDUE'" class="bg-red-100 text-red-800">Overdue</span>
+                                        <span th:case="'PARTIALLY_PAID'" class="bg-blue-100 text-blue-800">Partially Paid</span>
+                                        <span th:case="*" class="bg-gray-100 text-gray-800" th:text="${invoice.status}"></span>
+                                    </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a th:href="@{/patient/invoices/{id}(id=${invoice.id})}" class="text-indigo-600 hover:text-indigo-900">View Details</a>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(invoices)}">
+                            <td colspan="7" class="text-center py-10 px-6 text-gray-500">
+                                <i class="fas fa-file-invoice-dollar fa-3x mb-3"></i>
+                                <p class="font-semibold">No invoices found.</p>
+                                <p class="text-sm">Your billing history will appear here.</p>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Medical Record - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2563eb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after, .nav-link.active:after {
+            width: 100%;
+        }
+
+        /* Navbar blur effect */
+        .navbar-blur {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hero gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="hero-gradient min-h-screen">
+
+<header id="navbar" class="navbar-blur sticky top-0 z-50">
+    <nav class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center text-decoration-none">
+                <i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i>
+                <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a class="nav-link text-gray-700 font-medium" href="/dashboard">Dashboard</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/appointments">Appointments</a>
+                <a class="nav-link active text-gray-700 font-medium" href="/doctor/records">Medical Records</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/patients">My Patients</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/availability">My Availability</a>
+            </div>
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium">Dr. John Smith</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="container mx-auto mt-10 p-5">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Create Medical Record</h1>
+        <form class="bg-white p-8 rounded-lg shadow-lg" th:action="@{/doctor/records/create/{id}(id=${appointment.id})}" th:object="${medicalRecord}" method="post">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Patient Name</label>
+                <input type="text" class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2" th:value="${appointment.patient.firstName + ' ' + appointment.patient.lastName}" readonly>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Appointment</label>
+                <input type="text" class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2" th:value="${#temporals.format(appointment.appointmentDate, 'dd MMM yyyy')} + ' at ' + ${#temporals.format(appointment.appointmentTime, 'hh:mm a')}" readonly>
+            </div>
+
+            <!-- NOTIFICATION: Added fields for symptoms and treatment to capture complete record details. -->
+            <div class="mb-4">
+                <label for="symptoms" class="block text-sm font-medium text-gray-700">Symptoms</label>
+                <textarea id="symptoms" th:field="*{symptoms}" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="diagnosis" class="block text-sm font-medium text-gray-700">Diagnosis</label>
+                <textarea id="diagnosis" th:field="*{diagnosis}" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="treatment" class="block text-sm font-medium text-gray-700">Treatment Plan</label>
+                <textarea id="treatment" th:field="*{treatment}" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+
+            <!-- NOTIFICATION: Changed th:field="*{report}" to th:field="*{notes}" to match the MedicalRecord entity. This resolves the error. -->
+            <div class="mb-6">
+                <label for="notes" class="block text-sm font-medium text-gray-700">Report / Notes</label>
+                <textarea id="notes" th:field="*{notes}" rows="5" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div class="flex items-center justify-end space-x-4">
+                <a th:href="@{/dashboard}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Medical Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Navbar scroll blur effect
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('navbar');
+
+        function updateNavbar() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('navbar-blur');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.add('navbar-blur');
+            }
+        }
+
+        updateNavbar();
+        window.addEventListener('scroll', updateNavbar);
+    });
+</script>
+
+</body>
+</html>

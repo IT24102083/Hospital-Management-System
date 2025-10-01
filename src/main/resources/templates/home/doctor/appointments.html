@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2563eb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after, .nav-link.active:after {
+            width: 100%;
+        }
+
+        /* Navbar blur effect */
+        .navbar-blur {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hero gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-gray-50 hero-gradient min-h-screen">
+
+<header id="navbar" class="navbar-blur sticky top-0 z-50">
+    <nav class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center text-decoration-none">
+                <i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i>
+                <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a class="nav-link text-gray-700 font-medium" href="/dashboard">Dashboard</a>
+                <a class="nav-link active text-gray-700 font-medium" href="/doctor/appointments">Appointments</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/patients">My Patients</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/availability">My Availability</a>
+            </div>
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium" th:text="${'Dr. ' + doctor.firstName + ' ' + doctor.lastName}">Dr. John Smith</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="py-10">
+    <div class="container mx-auto px-4">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">My Appointments</h2>
+            <p class="text-lg text-gray-600 mt-1">View and manage all your scheduled patient appointments.</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3">Patient Name</th>
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Time</th>
+                        <th class="px-6 py-3">Reason for Visit</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="appointment : ${appointments}" class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium text-gray-900" th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
+                        <td class="px-6 py-4" th:text="${#temporals.format(appointment.appointmentDate, 'dd MMM yyyy')}"></td>
+                        <td class="px-6 py-4" th:text="${#temporals.format(appointment.appointmentTime, 'hh:mm a')}"></td>
+                        <td class="px-6 py-4" th:text="${appointment.reason}"></td>
+                        <td class="px-6 py-4">
+                                <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs"
+                                      th:classappend="${appointment.status.name() == 'SCHEDULED' ? 'bg-blue-100 text-blue-800' : (appointment.status.name() == 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')}"
+                                      th:text="${appointment.status}">
+                                </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <a th:href="@{/doctor/appointments/view/{id}(id=${appointment.id})}" class="text-blue-600 hover:text-blue-900 hover:underline text-xs font-medium">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${appointments.isEmpty()}">
+                        <td colspan="6" class="text-center py-10 text-gray-500">You have no appointments scheduled.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-800 text-gray-400 py-6 mt-12">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <p class="mb-0">&copy; 2025 HealthFirst Hospital Management System. All rights reserved.</p>
+            <p class="text-xs mt-1">Current User: <span class="font-semibold text-gray-300">IT24102083</span> | Date: <span class="font-semibold text-gray-300">2025-08-09 18:13:38</span></p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Navbar scroll blur effect
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('navbar');
+
+        function updateNavbar() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('navbar-blur');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.add('navbar-blur');
+            }
+        }
+
+        updateNavbar();
+        window.addEventListener('scroll', updateNavbar);
+    });
+</script>
+
+</body>
+</html>

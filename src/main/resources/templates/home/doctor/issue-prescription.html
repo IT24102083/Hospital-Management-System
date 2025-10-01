@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Prescription - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2563eb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after, .nav-link.active:after {
+            width: 100%;
+        }
+
+        /* Navbar blur effect */
+        .navbar-blur {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hero gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="hero-gradient min-h-screen">
+
+<header id="navbar" class="navbar-blur sticky top-0 z-50">
+    <nav class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center text-decoration-none">
+                <i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i>
+                <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a class="nav-link text-gray-700 font-medium" href="/dashboard">Dashboard</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/appointments">Appointments</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/records">Medical Records</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/patients">My Patients</a>
+                <a class="nav-link active text-gray-700 font-medium" href="/doctor/prescriptions">Prescriptions</a>
+            </div>
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium">Dr. John Smith</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="container mx-auto mt-10 p-5">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Issue Prescription</h1>
+
+        <div th:if="${formError}" class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            <span class="font-medium">Error:</span> <span th:text="${formError}"></span>
+        </div>
+
+        <form th:action="@{/doctor/prescriptions/create/{id}(id=${medicalRecord.id})}" th:object="${prescriptionForm}" method="post">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Patient Name</label>
+                        <input type="text" class="mt-1 block w-full bg-gray-100 border p-2 rounded-md" th:value="${patient.firstName + ' ' + patient.lastName}" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Medical Record Date</label>
+                        <input type="text" class="mt-1 block w-full bg-gray-100 border p-2 rounded-md" th:value="${#temporals.format(medicalRecord.createdAt, 'dd MMM yyyy')}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Medication Items</h3>
+                <div id="medication-items-container" class="space-y-4">
+                </div>
+                <button type="button" id="add-item-btn" class="mt-4 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600">
+                    <i class="fas fa-plus mr-2"></i>Add Medication
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <label for="instructions" class="block text-sm font-medium text-gray-700">General Instructions</label>
+                <textarea id="instructions" th:field="*{instructions}" rows="4" class="mt-1 block w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-4">
+                <a th:href="@{/dashboard}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Issue Prescription</button>
+            </div>
+    </div>
+    </form>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('medication-items-container');
+        const addItemBtn = document.getElementById('add-item-btn');
+        let itemIndex = 0;
+
+        function createNewItem() {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'p-4 border rounded-md bg-gray-50 relative';
+            itemDiv.innerHTML = `
+                    <button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()"><i class="fas fa-trash-alt"></i></button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div><label class="block text-xs font-medium text-gray-600">Medicine Name</label><input type="text" name="items[${itemIndex}].medicineName" class="mt-1 block w-full p-2 border-gray-300 rounded-md" required></div>
+                        <div><label class="block text-xs font-medium text-gray-600">Dosage</label><input type="text" name="items[${itemIndex}].dosage" class="mt-1 block w-full p-2 border-gray-300 rounded-md"></div>
+                        <div><label class="block text-xs font-medium text-gray-600">Frequency</label><input type="text" name="items[${itemIndex}].frequency" class="mt-1 block w-full p-2 border-gray-300 rounded-md"></div>
+                        <div><label class="block text-xs font-medium text-gray-600">Duration</label><input type="text" name="items[${itemIndex}].duration" class="mt-1 block w-full p-2 border-gray-300 rounded-md"></div>
+                    </div>`;
+            container.appendChild(itemDiv);
+            itemIndex++;
+        }
+        addItemBtn.addEventListener('click', createNewItem);
+        createNewItem(); // Add one item by default on page load
+
+        // Navbar scroll blur effect
+        const navbar = document.getElementById('navbar');
+
+        function updateNavbar() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('navbar-blur');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.add('navbar-blur');
+            }
+        }
+
+        updateNavbar();
+        window.addEventListener('scroll', updateNavbar);
+    });
+</script>
+</body>
+</html>

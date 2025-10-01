@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover { color: #2563eb; }
+        .nav-link.active { color: #2563eb; font-weight: 600; }
+        .nav-link.active:after { width: 100%; }
+        .action-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+            <a th:href="@{/admin/dashboard}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'dashboard'} ? 'active'">Dashboard & Users</a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                    <span class="font-medium">Admin</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 hero-gradient min-h-screen">
+    <div class="container mx-auto px-4">
+
+        <div th:if="${currentView == 'dashboard'}">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Admin Overview</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 font-medium">Total System Users</p>
+                            <p class="text-4xl font-bold text-gray-800" th:text="${totalUsers}">0</p>
+                        </div>
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i class="fas fa-users fa-lg"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">User Management</h1>
+                <a th:href="@{/admin/dashboard(view='addUser')}" class="action-btn text-white font-semibold py-2 px-5 rounded-full text-sm">
+                    <i class="fas fa-plus mr-2"></i> Add New User
+                </a>
+            </div>
+
+            <div th:if="${successMessage}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
+                <p th:text="${successMessage}"></p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="p-4 font-semibold">ID</th>
+                            <th class="p-4 font-semibold">Username</th>
+                            <th class="p-4 font-semibold">Full Name</th>
+                            <th class="p-4 font-semibold">Email</th>
+                            <th class="p-4 font-semibold">Role</th>
+                            <th class="p-4 font-semibold">Status</th>
+                            <th class="p-4 font-semibold text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 text-gray-700">
+                        <tr th:each="user : ${users}" class="hover:bg-gray-50">
+                            <td class="p-4" th:text="${user.id}"></td>
+                            <td class="p-4 font-medium text-gray-900" th:text="${user.username}"></td>
+                            <td class="p-4" th:text="${user.firstName + ' ' + user.lastName}"></td>
+                            <td class="p-4" th:text="${user.email}"></td>
+                            <td class="p-4"><span class="font-mono text-xs" th:text="${user.role.name().replace('ROLE_', '')}"></span></td>
+                            <td class="p-4">
+                                <span th:if="${user.active}" class="px-2 py-1 text-xs font-bold bg-green-100 text-green-800 rounded-full">Active</span>
+                                <span th:unless="${user.active}" class="px-2 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-full">Inactive</span>
+                            </td>
+                            <td class="p-4 text-center space-x-4">
+                                <a th:href="@{/admin/dashboard(view='editUser', id=${user.id})}" class="text-yellow-500 hover:text-yellow-700 transition-colors" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" class="text-red-500 hover:text-red-700 transition-colors" onclick="return confirm('Are you sure you want to delete this user?')" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'userForm'}">
+            <h1 class="text-3xl font-bold text-gray-800 mb-8" th:text="${formAction == 'add'} ? 'Add New User' : 'Edit User'"></h1>
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+                <form th:action="${formAction == 'add'} ? @{/admin/users/add} : @{/admin/users/update/{id}(id=${user.id})}" th:object="${user}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                            <input type="text" id="firstName" th:field="*{firstName}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" class="text-red-500 text-xs mt-1"></p>
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                            <input type="text" id="lastName" th:field="*{lastName}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" class="text-red-500 text-xs mt-1"></p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input type="text" id="username" th:field="*{username}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="text-red-500 text-xs mt-1"></p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="email" th:field="*{email}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-red-500 text-xs mt-1"></p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="password" name="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" th:placeholder="${formAction == 'edit'} ? 'Leave blank to keep current password' : ''">
+                        </div>
+                        <div>
+                            <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                            <input type="text" id="phoneNumber" th:field="*{phoneNumber}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                            <input type="text" id="address" th:field="*{address}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                            <select id="role" th:field="*{role}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option th:each="roleOpt : ${roles}" th:value="${roleOpt}" th:text="${roleOpt.name().replace('ROLE_', '')}"></option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <div class="flex items-center h-full">
+                                <input id="active" type="checkbox" th:field="*{active}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="active" class="ml-2 block text-sm text-gray-900">Is Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-end space-x-3">
+                        <a th:href="@{/admin/dashboard}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-5 rounded-full transition-colors">Cancel</a>
+                        <button type="submit" class="action-btn text-white font-bold py-2 px-5 rounded-full">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        // --- User Menu Dropdown Toggle ---
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        if(userMenuBtn) {
+            userMenuBtn.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+            });
+            // Hide dropdown if clicked outside
+            document.addEventListener('click', function(event) {
+                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
