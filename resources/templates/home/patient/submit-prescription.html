@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Submit Prescription</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6">Submit Your Prescription</h1>
+    <form th:action="@{/patient/prescriptions/submit}" th:object="${prescription}" method="post" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label for="instructions" class="block text-gray-700">Instructions (Optional)</label>
+            <textarea id="instructions" th:field="*{instructions}" class="w-full mt-1 p-2 border rounded-md"></textarea>
+        </div>
+        <div class="mb-4">
+            <label for="prescriptionFile" class="block text-gray-700">Upload Prescription File</label>
+            <input type="file" id="prescriptionFile" name="prescriptionFile" class="w-full mt-1 p-2 border rounded-md" required>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Submit</button>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error - HealthFirst</title>
+    <link
+            rel="icon"
+            type="image/png"
+            href="https://img.icons8.com/color/48/medical-cross.png"
+    />
+    <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+    />
+    <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        .logo-icon {
+            font-size: 28px;
+            color: #2563eb;
+            margin-right: 8px;
+        }
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .logo-text span {
+            color: #2563eb;
+        }
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link:after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: #2563eb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #2563eb;
+        }
+        .nav-link:hover:after {
+            width: 100%;
+        }
+        .login-btn {
+            background: linear-gradient(to right, #1e40af, #1d4ed8);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+            transition: all 0.3s ease;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4);
+        }
+        .hero-gradient {
+            background: linear-gradient(
+                    135deg,
+                    rgba(236, 253, 245, 0.95) 0%,
+                    rgba(14, 116, 144, 0.15) 100%
+            );
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(37, 99, 235, 0.2);
+            border-top: 5px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        html,
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* --- STYLES FOR 3D CANVAS (ADDED) --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place it behind all other content */
+        }
+    </style>
+
+    <script
+            async
+            src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"
+    ></script>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.156.1/build/three.module.js"
+          }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+<canvas id="bg-canvas"></canvas>
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav
+        id="navbar"
+        class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300"
+>
+    <div
+            class="container mx-auto px-4 py-3 flex justify-between items-center"
+    >
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+        <div class="hidden md:flex space-x-8">
+            <a href="/" class="nav-link text-gray-700 font-medium">Home</a>
+            <a href="/login" class="nav-link text-gray-700 font-medium">Login</a>
+            <a href="/register" class="nav-link text-gray-700 font-medium"
+            >Register</a
+            >
+        </div>
+        <div class="flex items-center space-x-4">
+            <a
+                    href="/login"
+                    class="login-btn hidden sm:block text-white px-5 py-2 rounded-full"
+            >Login</a
+            >
+            <div class="md:hidden">
+                <button
+                        id="mobileMenuBtn"
+                        class="text-gray-700 p-2 focus:outline-none"
+                >
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div
+            id="mobileMenu"
+            class="hidden md:hidden bg-white shadow-lg w-full absolute left-0 p-4 z-50"
+    >
+        <div class="flex flex-col space-y-3">
+            <a href="/" class="nav-link text-gray-700 font-medium py-2">Home</a>
+            <a href="/login" class="nav-link text-gray-700 font-medium py-2"
+            >Login</a
+            >
+            <a href="/register" class="nav-link text-gray-700 font-medium py-2"
+            >Register</a
+            >
+            <div class="pt-4 border-t border-gray-200">
+                <a
+                        href="/login"
+                        class="login-btn w-full block text-center text-white px-5 py-2 rounded-full"
+                >Login</a
+                >
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main
+        class="min-h-screen flex items-center justify-center pt-24 pb-16 hero-gradient relative"
+>
+    <div class="container mx-auto px-4 text-center">
+        <div
+                class="max-w-2xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 md:p-16 animate-fade-in-up"
+        >
+            <div class="text-blue-500 mb-6">
+                <i class="fas fa-heart-crack fa-5x"></i>
+            </div>
+            <h1
+                    class="text-7xl md:text-8xl font-extrabold text-blue-600 tracking-wider"
+                    th:text="${status ?: 'Error'}"
+            >
+                500
+            </h1>
+            <h2
+                    class="text-2xl md:text-3xl font-bold text-gray-800 mt-4"
+                    th:text="${error ?: 'An Error Occurred'}"
+            >
+                Oops! Something went wrong.
+            </h2>
+            <p class="text-gray-600 mt-2">
+                We seem to have a problem. Please try again later or return to the
+                homepage.
+            </p>
+            <div class="mt-8">
+                <a
+                        href="/"
+                        class="login-btn text-white font-bold py-3 px-8 rounded-full focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 active:scale-95"
+                >
+                    <i class="fas fa-home mr-2"></i>Go to Homepage
+                </a>
+            </div>
+            <div
+                    class="mt-8 text-left"
+                    th:if="${message} or ${timestamp} or ${path}"
+            >
+                <details class="text-gray-500 text-sm">
+                    <summary class="cursor-pointer font-medium hover:text-gray-700">
+                        Show Details
+                    </summary>
+                    <div class="mt-2 p-4 bg-gray-100 rounded-lg border">
+                        <p class="break-words" th:if="${message}">
+                            <strong class="font-semibold text-gray-700">Message:</strong>
+                            <span th:text="${message}"></span>
+                        </p>
+                        <p class="mt-1" th:if="${timestamp}">
+                            <strong class="font-semibold text-gray-700">Time:</strong>
+                            <span th:text="${timestamp}"></span>
+                        </p>
+                        <p class="mt-1" th:if="${path}">
+                            <strong class="font-semibold text-gray-700">Path:</strong>
+                            <span th:text="${path}"></span>
+                        </p>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Standard UI script
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = "0";
+            setTimeout(() => {
+                loadingOverlay.style.display = "none";
+            }, 500);
+        }
+
+        // --- Navbar Scroll Effect ---
+        window.addEventListener("scroll", function () {
+            const navbar = document.getElementById("navbar");
+            if (window.scrollY > 50) {
+                navbar.classList.add("shadow-md", "bg-white");
+                navbar.classList.remove("bg-white/90");
+            } else {
+                navbar.classList.remove("shadow-md", "bg-white");
+                navbar.classList.add("bg-white/90");
+            }
+        });
+
+        // --- Mobile Menu Toggle ---
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener("click", function () {
+                mobileMenu.classList.toggle("hidden");
+            });
+        }
+    });
+</script>
+
+<script type="module">
+    import * as THREE from "three";
+
+    // 1. Scene Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+    const renderer = new THREE.WebGLRenderer({
+        canvas: document.querySelector("#bg-canvas"),
+        alpha: true, // Make canvas background transparent
+    });
+
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.position.setZ(30);
+
+    // 2. Lighting
+    const ambientLight = new THREE.AmbientLight(0xadd8e6, 0.5); // Soft light blue ambient light
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7.5);
+    scene.add(directionalLight);
+
+    // 3. Object Creation (Medical Crosses)
+    const crosses = [];
+    const crossMaterial = new THREE.MeshStandardMaterial({
+        color: 0x007bff,
+        roughness: 0.6,
+    });
+
+    function createCross() {
+        const cross = new THREE.Group();
+        const bar1 = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, 1, 0.2),
+            crossMaterial
+        );
+        const bar2 = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 0.2, 0.2),
+            crossMaterial
+        );
+        cross.add(bar1);
+        cross.add(bar2);
+        return cross;
+    }
+
+    Array(60)
+        .fill()
+        .forEach(() => {
+            const cross = createCross();
+            const [x, y, z] = Array(3)
+                .fill()
+                .map(() => THREE.MathUtils.randFloatSpread(100));
+            cross.position.set(x, y, z);
+            const [rx, ry, rz] = Array(3)
+                .fill()
+                .map(() => Math.random() * Math.PI);
+            cross.rotation.set(rx, ry, rz);
+            scene.add(cross);
+            crosses.push(cross);
+        });
+
+    // 4. Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+        crosses.forEach((cross) => {
+            cross.rotation.x += 0.001;
+            cross.rotation.y += 0.002;
+            cross.position.y -= 0.02;
+            if (cross.position.y < -50) {
+                cross.position.y = 50;
+            }
+        });
+        renderer.render(scene, camera);
+    }
+
+    // 5. Handle Window Resizing
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener("resize", onWindowResize, false);
+
+    animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HealthFirst - Fulfill Prescription</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">Fulfill Prescription</h1>
+
+    <div th:if="${errorMessage}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+        <p th:text="${errorMessage}"></p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-semibold mb-4">Prescription Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p><strong>Prescription ID:</strong> <span th:text="${prescription.id}"></span></p>
+            <p><strong>Date:</strong> <span th:text="${#temporals.format(prescription.prescriptionDate, 'yyyy-MM-dd')}"></span></p>
+            <p><strong>Status:</strong> <span th:text="${prescription.status}"></span></p>
+            <p><strong>Patient:</strong> <span th:text="${prescription.medicalRecord?.patient?.firstName + ' ' + prescription.medicalRecord?.patient?.lastName}"></span></p>
+            <p class="md:col-span-2"><strong>Instructions:</strong> <span th:text="${prescription.instructions ?: 'N/A'}"></span></p>
+        </div>
+    </div>
+
+    <form th:action="@{/pharmacist/prescriptions/fulfill/{id}(id=${prescription.id})}" method="post">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Prescribed Items</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-2 px-4 text-left">Medicine Name</th>
+                        <th class="py-2 px-4 text-left">Dosage</th>
+                        <th class="py-2 px-4 text-left">Quantity</th>
+                        <th class="py-2 px-4 text-left">Select from Inventory</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${prescription.items}">
+                        <td class="py-2 px-4" th:text="${item.medicineName}"></td>
+                        <td class="py-2 px-4" th:text="${item.dosage}"></td>
+                        <td class="py-2 px-4" th:text="${item.quantity}"></td>
+                        <td class="py-2 px-4">
+                            <select th:name="'item_' + ${item.id} + '_medicineId'" class="w-full rounded-md border-gray-300" required>
+                                <option value="">Select Medicine...</option>
+                                <option th:each="med : ${medicines}"
+                                        th:value="${med.id}"
+                                        th:text="${med.name} + ' (Stock: ' + ${med.stock} + ')'"
+                                        th:disabled="${med.stock < item.quantity}">
+                                </option>
+                            </select>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-4">
+                <a th:href="@{/pharmacist/prescriptions}" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">Cancel</a>
+                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">
+                    Fulfill Prescription
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>

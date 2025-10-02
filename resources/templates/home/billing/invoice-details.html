@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Details - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .print-shadow { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300 no-print">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/patient/invoices" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Invoices
+            </a>
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-print mr-2"></i> Print
+            </button>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <!-- Invoice Header -->
+        <div class="bg-white rounded-lg shadow-lg print-shadow overflow-hidden mb-6">
+            <div class="bg-blue-600 text-white p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-3xl font-bold">Invoice</h1>
+                        <p class="text-blue-100 mt-1" th:text="${invoice.invoiceNumber ?: 'INV-2024-001'}">INV-2024-001</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="flex items-center text-blue-100">
+                            <i class="fas fa-heartbeat mr-2"></i>
+                            <span class="text-xl font-bold">HealthFirst</span>
+                        </div>
+                        <p class="text-blue-100 mt-2">123 Healthcare Avenue<br>Medical District, NY 10001<br>Phone: (212) 555-0123</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Invoice Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Bill To -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
+                        <div class="text-gray-700">
+                            <p class="font-medium" th:text="${invoice.patient.firstName + ' ' + invoice.patient.lastName}">John Doe</p>
+                            <p th:text="${invoice.patient.email}">john.doe@email.com</p>
+                            <p th:text="${invoice.patient.phoneNumber}">+1 (555) 123-4567</p>
+                            <p th:text="${invoice.patient.address}">456 Patient Street<br>Health City, NY 10002</p>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Details -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Invoice Details:</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-500">Issue Date:</p>
+                                <p class="font-medium" th:text="${#temporals.format(invoice.issueDate, 'MMM dd, yyyy')}">Jan 15, 2024</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500">Due Date:</p>
+                                <p class="font-medium" th:text="${#temporals.format(invoice.dueDate, 'MMM dd, yyyy')}">Feb 15, 2024</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500">Status:</p>
+                                <span th:switch="${invoice.status}" class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                    <span th:case="'PAID'" class="bg-green-100 text-green-800">Paid</span>
+                                    <span th:case="'PENDING'" class="bg-yellow-100 text-yellow-800">Pending</span>
+                                    <span th:case="'OVERDUE'" class="bg-red-100 text-red-800">Overdue</span>
+                                    <span th:case="'PARTIALLY_PAID'" class="bg-blue-100 text-blue-800">Partially Paid</span>
+                                </span>
+                            </div>
+                            <div th:if="${invoice.appointment}">
+                                <p class="text-gray-500">Appointment:</p>
+                                <p class="font-medium" th:text="${#temporals.format(invoice.appointment.appointmentDate, 'MMM dd, yyyy')}">Jan 10, 2024</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Services & Items:</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr th:each="item : ${invoice.items}">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${item.description}">General Consultation</div>
+                                        <div class="text-sm text-gray-500" th:if="${item.service}" th:text="${item.service.name}">Dr. Smith - Cardiology</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${item.quantity}">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$<span th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2)}">150.00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">$<span th:text="${#numbers.formatDecimal(item.lineTotal, 1, 2)}">150.00</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Invoice Totals -->
+                <div class="flex justify-end">
+                    <div class="w-full max-w-md">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Subtotal:</span>
+                                    <span class="font-medium">$<span th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2)}">150.00</span></span>
+                                </div>
+                                <div th:if="${invoice.tax > 0}" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tax:</span>
+                                    <span class="font-medium">$<span th:text="${#numbers.formatDecimal(invoice.tax, 1, 2)}">12.00</span></span>
+                                </div>
+                                <div th:if="${invoice.discount > 0}" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Discount:</span>
+                                    <span class="font-medium text-green-600">-$<span th:text="${#numbers.formatDecimal(invoice.discount, 1, 2)}">10.00</span></span>
+                                </div>
+                                <div class="border-t pt-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-lg font-semibold text-gray-900">Total:</span>
+                                        <span class="text-lg font-bold text-blue-600">$<span th:text="${#numbers.formatDecimal(invoice.total, 1, 2)}">152.00</span></span>
+                                    </div>
+                                </div>
+                                <div th:if="${invoice.amountPaid > 0}" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Amount Paid:</span>
+                                    <span class="font-medium text-green-600">$<span th:text="${#numbers.formatDecimal(invoice.amountPaid, 1, 2)}">152.00</span></span>
+                                </div>
+                                <div th:if="${invoice.balanceDue > 0}" class="flex justify-between">
+                                    <span class="text-lg font-semibold text-red-600">Balance Due:</span>
+                                    <span class="text-lg font-bold text-red-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">0.00</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div th:if="${invoice.notes}" class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Notes:</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-700" th:text="${invoice.notes}">Thank you for choosing HealthFirst for your healthcare needs.</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-4 no-print" th:if="${invoice.status == T(com.hospital.hospitalmanagementsystem.model.Invoice.InvoiceStatus).PENDING || invoice.status == T(com.hospital.hospitalmanagementsystem.model.Invoice.InvoiceStatus).PARTIALLY_PAID || invoice.status == T(com.hospital.hospitalmanagementsystem.model.Invoice.InvoiceStatus).OVERDUE}">
+                    <button onclick="payNow()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                        <i class="fas fa-credit-card mr-2"></i> Pay Now
+                    </button>
+                    <button onclick="setupPaymentPlan()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                        <i class="fas fa-calendar-alt mr-2"></i> Setup Payment Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative no-print">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+    });
+
+    function payNow() {
+        const invoiceId = window.location.pathname.split('/').pop();
+        window.location.href = `/patient/invoices/${invoiceId}/pay`;
+    }
+
+    function setupPaymentPlan() {
+        const invoiceId = window.location.pathname.split('/').pop();
+        window.location.href = `/patient/invoices/${invoiceId}/setup-payment-plan`;
+    }
+</script>
+</body>
+</html>
