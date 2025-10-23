@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${editMode ? 'Edit Profile' : 'Doctor Profile'} + ' - HealthFirst'">Doctor Profile</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .login-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .form-input { appearance: none; background-color: #fff; border-color: #d1d5db; border-width: 1px; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 1rem; line-height: 1.5rem; transition: all 0.2s ease-in-out; }
+        .form-input:focus { outline: 2px solid transparent; outline-offset: 2px; --tw-ring-color: #2563eb; border-color: #2563eb; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: #374151; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        .alert-fade { transition: opacity 0.5s ease-out; }
+        .form-input.invalid { border-color: #ef4444; }
+        .form-input.invalid:focus { --tw-ring-color: #ef4444; border-color: #ef4444; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 50%; transform: translateX(-50%); background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover:after, .nav-link.active:after { width: 100%; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/dashboard" class="flex items-center no-underline"><i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i><span class="text-2xl font-extrabold text-gray-800">Health<span>First</span></span></a>
+
+        <div class="hidden md:flex items-center space-x-8">
+            <a href="/dashboard" class="nav-link text-gray-700 font-medium">Dashboard</a>
+            <a href="/doctor/appointments" class="nav-link text-gray-700 font-medium">Appointments</a>
+            <a href="/doctor/records" class="nav-link text-gray-700 font-medium">Medical Records</a>
+            <a href="/doctor/patients" class="nav-link text-gray-700 font-medium">My Patients</a>
+            <a href="/doctor/availability" class="nav-link text-gray-700 font-medium">My Availability</a>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium" th:text="${'Dr. ' + doctor.firstName + ' ' + doctor.lastName}">Dr. Name</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false"
+                     x-transition
+                     class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                     style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-blue-600 bg-blue-50 font-semibold">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<main class="pt-24 pb-16 hero-gradient min-h-screen">
+    <div class="container mx-auto px-4">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900" th:text="${editMode ? 'Edit Profile' : 'My Profile'}"></h1>
+            <p class="text-lg text-gray-600" th:text="${editMode ? 'Update your professional and personal information.' : 'Manage your personal and medical information.'}"></p>
+        </div>
+
+        <div id="success-alert" th:if="${successMessage}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 alert-fade" role="alert">
+            <p class="font-bold">Success</p>
+            <p th:text="${successMessage}"></p>
+        </div>
+        <div id="error-alert" th:if="${param.error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 alert-fade" role="alert">
+            <p class="font-bold">Error</p>
+            <p>Please correct the issues below and try again.</p>
+        </div>
+
+        <form id="profile-form" th:action="@{/doctor/profile/edit}" th:object="${doctor}" method="post" novalidate>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Personal Information</h2>
+                        <div class="space-y-6 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <p th:unless="${editMode}" class="text-gray-900" th:text="*{firstName}"></p>
+                                    <input th:if="${editMode}" type="text" id="firstName" th:field="*{firstName}" class="w-full form-input" required
+                                           pattern="^[a-zA-Z\s]*$" title="First name must not contain numbers or special characters">
+                                    <span id="firstNameError" class="text-red-500 text-sm mt-1 hidden"></span>
+                                </div>
+                                <div>
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <p th:unless="${editMode}" class="text-gray-900" th:text="*{lastName}"></p>
+                                    <input th:if="${editMode}" type="text" id="lastName" th:field="*{lastName}" class="w-full form-input" required
+                                           pattern="^[a-zA-Z\s]*$" title="Last name must not contain numbers or special characters">
+                                    <span id="lastNameError" class="text-red-500 text-sm mt-1 hidden"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="email" class="form-label">Email</label>
+                                <p class="text-gray-900 bg-gray-100 p-2 rounded-md cursor-not-allowed" th:text="*{email}"></p>
+                                <small class="text-gray-500">Email cannot be changed.</small>
+                            </div>
+                            <div>
+                                <label for="phoneNumber" class="form-label">Phone</label>
+                                <p th:unless="${editMode}" class="text-gray-900" th:text="*{phoneNumber}"></p>
+                                <input th:if="${editMode}" type="tel" id="phoneNumber" th:field="*{phoneNumber}" class="w-full form-input"
+                                       pattern="^\d{10}$" title="Phone number must be exactly 10 digits" maxlength="10">
+                                <span id="phoneError" class="text-red-500 text-sm mt-1 hidden"></span>
+                            </div>
+                            <div><label for="address" class="form-label">Address</label><p th:unless="${editMode}" class="text-gray-900" th:text="*{address}"></p><textarea th:if="${editMode}" id="address" th:field="*{address}" rows="3" class="w-full form-input"></textarea></div>
+                            <div><label for="biography" class="form-label">Biography</label><p th:unless="${editMode}" class="text-gray-600 whitespace-pre-line" th:text="*{biography}"></p><textarea th:if="${editMode}" id="biography" th:field="*{biography}" rows="5" class="w-full form-input"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Professional Information</h2>
+                        <div class="space-y-4">
+                            <div><label class="form-label text-gray-500">Specialization</label><p class="text-gray-900 font-semibold" th:text="*{specialization}"></p></div>
+                            <div>
+                                <label for="qualification" class="form-label">Qualification</label>
+                                <p th:unless="${editMode}" class="text-gray-900" th:text="*{qualification}"></p>
+                                <input th:if="${editMode}" type="text" id="qualification" th:field="*{qualification}" class="w-full form-input"
+                                       pattern="^[a-zA-Z.,\s]*$" title="Qualification must not contain numbers">
+                                <span id="qualificationError" class="text-red-500 text-sm mt-1 hidden"></span>
+                            </div>
+                            <div><label for="licenseNumber" class="form-label">License Number</label><p th:unless="${editMode}" class="text-gray-900" th:text="*{licenseNumber}"></p><input th:if="${editMode}" type="text" id="licenseNumber" th:field="*{licenseNumber}" class="w-full form-input"></div>
+                            <div><label for="experience" class="form-label">Experience</label><p th:unless="${editMode}" class="text-gray-900" th:text="*{experience}"></p><input th:if="${editMode}" type="text" id="experience" th:field="*{experience}" class="w-full form-input"></div>
+                            <div>
+                                <label for="consultationFee" class="form-label">Consultation Fee</label>
+                                <p th:unless="${editMode}" class="text-gray-900" th:text="${'$'+doctor.consultationFee}"></p>
+                                <input th:if="${editMode}" type="text" id="consultationFee" th:field="*{consultationFee}" class="w-full form-input"
+                                       pattern="^[0-9.]*$" title="Consultation fee must contain only numbers">
+                                <span id="feeError" class="text-red-500 text-sm mt-1 hidden"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <div th:unless="${editMode}"><a th:href="@{/doctor/profile(mode='edit')}" class="login-btn w-full block text-center text-white font-semibold py-3 px-6 rounded-full"><i class="fas fa-edit mr-2"></i> Edit My Profile</a></div>
+                        <div th:if="${editMode}" class="flex flex-col space-y-3"><button type="submit" class="login-btn text-white font-semibold py-3 px-6 rounded-full"><i class="fas fa-save mr-2"></i> Save Changes</button><a href="/doctor/profile" class="w-full block text-center bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-full hover:bg-gray-300">Cancel</a></div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Auto-hide alerts ---
+        const successAlert = document.getElementById('success-alert');
+        const errorAlert = document.getElementById('error-alert');
+        function hideAlert(alertElement) { if (alertElement) { setTimeout(() => { alertElement.style.opacity = '0'; setTimeout(() => { alertElement.style.display = 'none'; }, 500); }, 5000); } }
+        hideAlert(successAlert);
+        hideAlert(errorAlert);
+
+        // --- Frontend Validation ---
+        const form = document.getElementById('profile-form');
+        if (!form || !document.body.contains(document.getElementById('firstName'))) return;
+
+        const fieldsToValidate = [
+            { id: 'firstName', errorId: 'firstNameError' },
+            { id: 'lastName', errorId: 'lastNameError' },
+            { id: 'phoneNumber', errorId: 'phoneError' },
+            { id: 'qualification', errorId: 'qualificationError' },
+            { id: 'consultationFee', errorId: 'feeError' }
+        ];
+
+        fieldsToValidate.forEach(field => {
+            const input = document.getElementById(field.id);
+            const errorSpan = document.getElementById(field.errorId);
+
+            if (input && errorSpan) {
+                input.addEventListener('input', () => {
+                    if (!input.checkValidity()) {
+                        errorSpan.textContent = input.title; // Use the title attribute for the message
+                        errorSpan.classList.remove('hidden');
+                        input.classList.add('invalid');
+                    } else {
+                        errorSpan.classList.add('hidden');
+                        input.classList.remove('invalid');
+                    }
+                });
+            }
+        });
+
+        form.addEventListener('submit', function(event) {
+            let isFormValid = true;
+            fieldsToValidate.forEach(field => {
+                const input = document.getElementById(field.id);
+                if (input && !input.checkValidity()) {
+                    isFormValid = false;
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+
+            if (!isFormValid) {
+                event.preventDefault();
+                alert('Please correct the errors before submitting.');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

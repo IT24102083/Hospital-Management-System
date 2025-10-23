@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescriptions - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="font-sans text-gray-800 bg-gray-50">
+<main class="py-10">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6">Issued Prescriptions</h2>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3">Date</th>
+                    <th scope="col" class="px-6 py-3">Patient</th>
+                    <th scope="col" class="px-6 py-3">Status</th>
+                    <th scope="col" class="px-6 py-3">Items</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${prescriptions}" class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-6 py-4" th:text="${#temporals.format(p.prescriptionDate, 'dd MMM yyyy')}"></td>
+                    <td class="px-6 py-4 font-medium" th:text="${p.medicalRecord.patient.firstName + ' ' + p.medicalRecord.patient.lastName}"></td>
+                    <td class="px-6 py-4">
+                                <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs"
+                                      th:classappend="${p.status.name() == 'PENDING' ? 'bg-yellow-100 text-yellow-800' : (p.status.name() == 'FULFILLED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')}"
+                                      th:text="${p.status}"></span>
+                    </td>
+                    <td class="px-6 py-4" th:text="${#lists.size(p.items)}"></td>
+                </tr>
+                <tr th:if="${prescriptions.isEmpty()}">
+                    <td colspan="4" class="text-center py-10 text-gray-500">No prescriptions found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

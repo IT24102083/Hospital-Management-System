@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Medicine - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style type="text/tailwindcss">
+        body {
+            background-color: #f0f9ff;
+            font-family: "Public Sans", "Noto Sans", sans-serif;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+    </style>
+</head>
+<body>
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+    <nav class="sticky top-0 z-50 w-full bg-sky-100">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a href="/dashboard" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="flex items-center space-x-3">
+                <a href="/logout"
+                   class="bg-white text-red-500 border border-red-500 px-5 py-2 rounded-full font-medium hover:bg-red-50 transition">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <div class="bg-blue-50 p-6 border-b border-blue-100">
+                <h1 class="text-2xl font-bold text-slate-800">Add New Medicine to Inventory</h1>
+                <p class="text-sm text-slate-500 mt-1">Fill in the details below to add a new medicine.</p>
+            </div>
+
+            <!-- Display messages -->
+            <div th:if="${successMessage}" class="p-4 bg-green-50 border-l-4 border-green-500">
+                <div class="font-medium text-green-800" th:text="${successMessage}"></div>
+            </div>
+
+            <div th:if="${errorMessage}" class="p-4 bg-red-50 border-l-4 border-red-500">
+                <div class="font-medium text-red-800" th:text="${errorMessage}"></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <form th:action="@{/pharmacist/medicines/create}" th:object="${medicine}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    <!-- Display validation errors -->
+                    <div th:if="${#fields.hasErrors('*')}" class="p-4 bg-red-50 border-l-4 border-red-500">
+                        <div class="font-medium text-red-800">Please correct the following errors:</div>
+                        <ul class="mt-2 list-disc list-inside text-sm text-red-700">
+                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                        </ul>
+                    </div>
+
+                    <!-- Basic Information Section -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
+
+                        <!-- Medicine Name -->
+                        <div class="mb-4">
+                            <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Medicine Name *</label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-pills text-slate-400"></i>
+                                </div>
+                                <input type="text" id="name" name="name" th:field="*{name}"
+                                       class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., Paracetamol 500mg" required>
+                            </div>
+                            <div th:if="${#fields.hasErrors('name')}" class="mt-1 text-sm text-red-600" th:errors="*{name}"></div>
+                        </div>
+
+                        <!-- Generic Name and Brand -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="generic_name" class="block text-sm font-medium text-slate-700 mb-1">Generic Name</label>
+                                <input type="text" id="generic_name" name="generic_name" th:field="*{genericName}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., Acetaminophen">
+                            </div>
+                            <div>
+                                <label for="brand" class="block text-sm font-medium text-slate-700 mb-1">Brand</label>
+                                <input type="text" id="brand" name="brand" th:field="*{brand}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., Tylenol">
+                            </div>
+                        </div>
+
+                        <!-- Category and Manufacturer -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="category" class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                <select id="category" name="category" th:field="*{category}"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Category</option>
+                                    <option value="Pain Relief">Pain Relief</option>
+                                    <option value="Antibiotics">Antibiotics</option>
+                                    <option value="Vitamins">Vitamins</option>
+                                    <option value="Cardiovascular">Cardiovascular</option>
+                                    <option value="Respiratory">Respiratory</option>
+                                    <option value="Digestive Health">Digestive Health</option>
+                                    <option value="Anti-inflammatory">Anti-inflammatory</option>
+                                    <option value="Dermatological">Dermatological</option>
+                                    <option value="Neurological">Neurological</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="manufacturer" class="block text-sm font-medium text-slate-700 mb-1">Manufacturer</label>
+                                <input type="text" id="manufacturer" name="manufacturer" th:field="*{manufacturer}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., PharmaCorp Ltd">
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                            <textarea id="description" name="description" th:field="*{description}" rows="3"
+                                      class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Brief description of the medicine and its uses"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Dosage and Form Section -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Dosage and Form</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label for="dosage" class="block text-sm font-medium text-slate-700 mb-1">Dosage</label>
+                                <input type="text" id="dosage" name="dosage" th:field="*{dosage}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., 500mg, 10mg/5ml">
+                            </div>
+                            <div>
+                                <label for="form" class="block text-sm font-medium text-slate-700 mb-1">Form</label>
+                                <select id="form" name="form" th:field="*{form}"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Form</option>
+                                    <option value="Tablet">Tablet</option>
+                                    <option value="Capsule">Capsule</option>
+                                    <option value="Syrup">Syrup</option>
+                                    <option value="Injection">Injection</option>
+                                    <option value="Cream">Cream</option>
+                                    <option value="Ointment">Ointment</option>
+                                    <option value="Drops">Drops</option>
+                                    <option value="Powder">Powder</option>
+                                    <option value="Inhaler">Inhaler</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="dosageForm" class="block text-sm font-medium text-slate-700 mb-1">Dosage Form</label>
+                                <input type="text" id="dosageForm" name="dosageForm" th:field="*{dosageForm}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="e.g., Extended Release">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing and Stock Section -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Pricing and Stock</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label for="price" class="block text-sm font-medium text-slate-700 mb-1">Price (LKR) *</label>
+                                <div class="relative">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <span class="text-slate-500 sm:text-sm">Rs</span>
+                                    </div>
+                                    <input type="number" id="price" name="price" th:field="*{price}"
+                                           class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <div th:if="${#fields.hasErrors('price')}" class="mt-1 text-sm text-red-600" th:errors="*{price}"></div>
+                            </div>
+                            <div>
+                                <label for="stock" class="block text-sm font-medium text-slate-700 mb-1">Stock Quantity *</label>
+                                <input type="number" id="stock" name="stock" th:field="*{stock}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Enter quantity" min="0" required>
+                                <div th:if="${#fields.hasErrors('stock')}" class="mt-1 text-sm text-red-600" th:errors="*{stock}"></div>
+                            </div>
+                            <div>
+                                <label for="expiryDate" class="block text-sm font-medium text-slate-700 mb-1">Expiry Date</label>
+                                <input type="date" id="expiryDate" name="expiryDate" th:field="*{expiryDate}"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Medicine Image</h3>
+
+                        <!-- Image Upload Options -->
+                        <div class="mb-4">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="imageOption" value="upload" class="mr-2" checked>
+                                    <span class="text-sm font-medium text-slate-700">Upload Image File</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="imageOption" value="url" class="mr-2">
+                                    <span class="text-sm font-medium text-slate-700">Use Image URL</span>
+                                </label>
+                            </div>
+
+                            <!-- File Upload -->
+                            <div id="fileUpload" class="mb-4">
+                                <label for="imageFile" class="block text-sm font-medium text-slate-700 mb-1">Select Image File</label>
+                                <div class="flex items-center space-x-4">
+                                    <input type="file" id="imageFile" name="imageFile" accept="image/*"
+                                           class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                </div>
+                                <p class="mt-1 text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+
+                            <!-- URL Input -->
+                            <div id="urlInput" class="mb-4" style="display: none;">
+                                <label for="imageUrl" class="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
+                                <input type="url" id="imageUrl" name="imageUrl"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="https://example.com/image.jpg">
+                                <p class="mt-1 text-xs text-slate-500">Enter a valid image URL</p>
+                            </div>
+
+                            <!-- Image Preview -->
+                            <div id="imagePreview" class="mt-4" style="display: none;">
+                                <p class="text-sm font-medium text-slate-700 mb-2">Image Preview:</p>
+                                <img id="previewImage" src="" alt="Preview" class="image-preview border border-slate-300">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Additional Information</h3>
+
+                        <!-- Side Effects -->
+                        <div class="mb-4">
+                            <label for="side_effects" class="block text-sm font-medium text-slate-700 mb-1">Side Effects</label>
+                            <textarea id="side_effects" name="side_effects" th:field="*{sideEffects}" rows="2"
+                                      class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Common side effects (optional)"></textarea>
+                        </div>
+
+                        <!-- Contraindications -->
+                        <div class="mb-4">
+                            <label for="contraindications" class="block text-sm font-medium text-slate-700 mb-1">Contraindications</label>
+                            <textarea id="contraindications" name="contraindications" th:field="*{contraindications}" rows="2"
+                                      class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="When not to use this medicine (optional)"></textarea>
+                        </div>
+
+                        <!-- Storage Instructions -->
+                        <div class="mb-4">
+                            <label for="storageInstructions" class="block text-sm font-medium text-slate-700 mb-1">Storage Instructions</label>
+                            <input type="text" id="storageInstructions" name="storageInstructions" th:field="*{storageInstructions}"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="e.g., Store in a cool, dry place">
+                        </div>
+
+                        <!-- Prescription Required -->
+                        <div class="flex items-center">
+                            <input type="checkbox" id="requiresPrescription" name="requiresPrescription" th:field="*{requiresPrescription}"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="requiresPrescription" class="ml-2 block text-sm text-gray-700">Requires Prescription</label>
+                        </div>
+                    </div>
+
+                    <!-- Form Buttons -->
+                    <div class="flex justify-end gap-3 pt-4">
+                        <a th:href="@{/dashboard}" class="px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 font-medium transition">
+                            Cancel
+                        </a>
+                        <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add Medicine
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-6 px-6 text-center text-sm text-slate-500 mt-auto">
+        <p>© 2025 HealthFirst Pharmacy Management. Homagama, Sri Lanka.</p>
+    </footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const imageOptions = document.querySelectorAll('input[name="imageOption"]');
+        const fileUpload = document.getElementById('fileUpload');
+        const urlInput = document.getElementById('urlInput');
+        const imageFile = document.getElementById('imageFile');
+        const imageUrl = document.getElementById('imageUrl');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+
+        // Handle image option toggle
+        imageOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'upload') {
+                    fileUpload.style.display = 'block';
+                    urlInput.style.display = 'none';
+                    imageUrl.value = '';
+                    hidePreview();
+                } else {
+                    fileUpload.style.display = 'none';
+                    urlInput.style.display = 'block';
+                    imageFile.value = '';
+                    hidePreview();
+                }
+            });
+        });
+
+        // Handle file upload preview
+        imageFile.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                hidePreview();
+            }
+        });
+
+        // Handle URL input preview
+        imageUrl.addEventListener('blur', function() {
+            const url = this.value.trim();
+            if (url) {
+                showPreview(url);
+            } else {
+                hidePreview();
+            }
+        });
+
+        function showPreview(src) {
+            previewImage.src = src;
+            imagePreview.style.display = 'block';
+        }
+
+        function hidePreview() {
+            previewImage.src = '';
+            imagePreview.style.display = 'none';
+        }
+
+        // Form validation
+        form.addEventListener('submit', function(event) {
+            const name = document.getElementById('name').value.trim();
+            const price = document.getElementById('price').value;
+            const stock = document.getElementById('stock').value;
+            let hasError = false;
+
+            if (name === '') {
+                alert('Medicine name is required.');
+                hasError = true;
+            }
+
+            if (price === '' || parseFloat(price) <= 0) {
+                alert('Price must be provided and greater than 0.');
+                hasError = true;
+            }
+
+            if (stock === '' || parseInt(stock) < 0) {
+                alert('Stock quantity must be provided and cannot be negative.');
+                hasError = true;
+            }
+
+            if (hasError) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${pageTitle ?: 'Receptionist Dashboard'} + ' - HealthFirst'"></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link.active { color: #2563eb; font-weight: 600; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(239, 246, 255, 0.8) 0%, rgba(219, 234, 254, 0.1) 100%); }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+
+        <div class="hidden md:flex items-center space-x-8">
+            <a th:href="@{/receptionist/dashboard}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'dashboard' ? 'active' : ''}">Dashboard</a>
+            <a th:href="@{/receptionist/dashboard(view='book')}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'book' ? 'active' : ''}">Book Appointment</a>
+            <a th:href="@{/receptionist/dashboard(view='register')}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'register' ? 'active' : ''}">Register Patient</a>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                    <span class="font-medium" th:text="${user != null ? user.firstName : 'Receptionist'}">Receptionist</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-user-circle mr-2"></i>My Profile
+                    </a>
+                    <div class="border-t border-gray-100 my-1"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-600 hover:text-blue-600 focus:outline-none">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+        <a th:href="@{/receptionist/dashboard}" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+        <a th:href="@{/receptionist/dashboard(view='book')}" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Book Appointment</a>
+        <a th:href="@{/receptionist/dashboard(view='register')}" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Register Patient</a>
+    </div>
+</nav>
+
+<main class="min-h-screen pt-28 pb-16 hero-gradient">
+    <div class="container mx-auto px-4">
+
+        <div id="success-alert" th:if="${successMessage}" class="max-w-7xl mx-auto bg-green-100 text-green-700 p-4 mb-6 rounded-lg transition-opacity duration-1000 ease-out" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="max-w-7xl mx-auto bg-red-100 text-red-700 p-4 mb-6 rounded-lg" th:text="${errorMessage}"></div>
+
+        <div th:if="${currentView == 'dashboard'}">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-blue-500 text-white p-6 rounded-xl shadow-lg flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium opacity-80">Total Patients</p>
+                        <p class="text-3xl font-bold" th:text="${patientCount}">0</p>
+                    </div>
+                    <i class="fas fa-users text-4xl opacity-50"></i>
+                </div>
+                <div class="bg-green-500 text-white p-6 rounded-xl shadow-lg flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium opacity-80">Total Appointments</p>
+                        <p class="text-3xl font-bold" th:text="${appointmentCount}">0</p>
+                    </div>
+                    <i class="fas fa-calendar-check text-4xl opacity-50"></i>
+                </div>
+                <div class="bg-indigo-500 text-white p-6 rounded-xl shadow-lg flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium opacity-80">Today's Appointments</p>
+                        <p class="text-3xl font-bold" th:text="${#lists.size(todaysAppointments)}">0</p>
+                    </div>
+                    <i class="fas fa-calendar-day text-4xl opacity-50"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                <form th:action="@{/receptionist/dashboard}" method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <input type="hidden" name="view" value="dashboard"/>
+                    <div>
+                        <label for="patientName" class="text-sm font-medium text-gray-700">Patient Name</label>
+                        <input type="text" name="patientName" id="patientName" th:value="${patientName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                    </div>
+                    <div>
+                        <label for="doctorName" class="text-sm font-medium text-gray-700">Doctor Name</label>
+                        <input type="text" name="doctorName" id="doctorName" th:value="${doctorName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                    </div>
+                    <div>
+                        <label for="date" class="text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="date" id="date" th:value="${date}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                    </div>
+                    <div class="flex space-x-6 md:col-start-5">
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Filter</button>
+                        <a th:href="@{/receptionist/dashboard}" class="w-full text-center bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300">Clear</a>
+                    </div>
+                </form>
+            </div>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-600">
+                    <tr>
+                        <th class="p-4 font-semibold">Patient</th>
+                        <th class="p-4 font-semibold">Doctor</th>
+                        <th class="p-4 font-semibold">Date & Time</th>
+                        <th class="p-4 font-semibold">Status</th>
+                        <th class="p-4 font-semibold">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                    <tr th:each="appt : ${appointments}">
+                        <td class="p-4" th:text="${appt.patient.firstName + ' ' + appt.patient.lastName}"></td>
+                        <td class="p-4" th:text="${'Dr. ' + appt.doctor.firstName + ' ' + appt.doctor.lastName}"></td>
+                        <td class="p-4" th:text="${#temporals.format(appt.appointmentDate, 'yyyy-MM-dd')} + ' at ' + ${#temporals.format(appt.appointmentTime, 'hh:mm a')}"></td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-full"
+                                  th:text="${appt.status}"
+                                  th:classappend="${#strings.toString(appt.status) == 'COMPLETED' ? 'bg-green-100 text-green-800' : ''} +
+                                                 ${#strings.toString(appt.status) == 'SCHEDULED' ? 'bg-blue-100 text-blue-800' : ''} +
+                                                 ${#strings.toString(appt.status) == 'CANCELLED' ? 'bg-red-100 text-red-800' : ''}">
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <a th:href="@{/receptionist/dashboard(view='edit', id=${appt.id})}" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(appointments)}">
+                        <td colspan="5" class="text-center p-8 text-gray-500">No appointments found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'register'}">
+            <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Register New Patient</h1>
+                <form th:action="@{/receptionist/patients/register}" th:object="${patient}" method="post" class="space-y-8">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Account Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div>
+                                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                                <input type="text" id="username" th:field="*{username}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                                <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="text-red-500 text-xs mt-1"></p>
+                            </div>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                <input type="password" id="password" th:field="*{password}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="text-red-500 text-xs mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Personal Details</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div>
+                                <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                                <input type="text" id="firstName" th:field="*{firstName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                                <input type="text" id="lastName" th:field="*{lastName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input type="email" id="email" th:field="*{email}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                            </div>
+                            <div>
+                                <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                                <input type="tel" id="phoneNumber" th:field="*{phoneNumber}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="dateOfBirth" class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                                <input type="date" id="dateOfBirth" th:field="*{dateOfBirth}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                                <select id="gender" th:field="*{gender}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                                    <option value="">Select...</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                <textarea id="address" th:field="*{address}" rows="3" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Medical & Emergency Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div>
+                                <label for="bloodGroup" class="block text-sm font-medium text-gray-700">Blood Group</label>
+                                <select id="bloodGroup" th:field="*{bloodGroup}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                                    <option value="">Select...</option>
+                                    <option value="A_POSITIVE">A+</option>
+                                    <option value="A_NEGATIVE">A-</option>
+                                    <option value="B_POSITIVE">B+</option>
+                                    <option value="B_NEGATIVE">B-</option>
+                                    <option value="AB_POSITIVE">AB+</option>
+                                    <option value="AB_NEGATIVE">AB-</option>
+                                    <option value="O_POSITIVE">O+</option>
+                                    <option value="O_NEGATIVE">O-</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="allergies" class="block text-sm font-medium text-gray-700">Allergies</label>
+                                <textarea id="allergies" th:field="*{allergies}" rows="2" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" placeholder="e.g., Penicillin, Peanuts"></textarea>
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="medicalHistory" class="block text-sm font-medium text-gray-700">Existing Medical History</label>
+                                <textarea id="medicalHistory" th:field="*{medicalHistory}" rows="3" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" placeholder="e.g., Asthma, Hypertension"></textarea>
+                            </div>
+                            <div>
+                                <label for="emergencyContactName" class="block text-sm font-medium text-gray-700">Emergency Contact Name</label>
+                                <input type="text" id="emergencyContactName" th:field="*{emergencyContactName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="emergencyContactNumber" class="block text-sm font-medium text-gray-700">Emergency Contact Number</label>
+                                <input type="tel" id="emergencyContactNumber" th:field="*{emergencyContactNumber}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors">Register Patient</button>
+                        <a th:href="@{/receptionist/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'book'}">
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Book New Appointment</h1>
+                <form th:action="@{/receptionist/appointments/book}" th:object="${appointment}" method="post" class="space-y-6">
+                    <div>
+                        <label for="patient" class="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                        <select id="patient" th:field="*{patient}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select a Patient...</option>
+                            <option th:each="p : ${patients}" th:value="${p.id}" th:text="${p.firstName + ' ' + p.lastName}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="doctor" class="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+                        <select id="doctor" th:field="*{doctor}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select a Doctor...</option>
+                            <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName + ' (' + doc.specialization + ')'}"></option>
+                        </select>
+                    </div>
+                    <div id="availability-info" class="hidden bg-blue-50 border-l-4 border-blue-400 text-blue-700 p-4 rounded-r-lg">
+                        <p class="font-bold">Available Dates:</p>
+                        <div id="available-dates-list" class="mt-2 text-sm"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="appointmentDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="appointmentDate" th:field="*{appointmentDate}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="appointmentTime" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                            <input type="time" id="appointmentTime" th:field="*{appointmentTime}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+                        <textarea id="reason" th:field="*{reason}" rows="4" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Annual Check-up, Consultation for fever..."></textarea>
+                    </div>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors">Book Appointment</button>
+                        <a th:href="@{/receptionist/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${currentView == 'edit'}">
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Edit Appointment</h1>
+                <form th:action="@{/receptionist/appointments/edit}" th:object="${appointment}" method="post" class="space-y-6">
+                    <input type="hidden" th:field="*{id}" />
+                    <input type="hidden" th:field="*{patient}" />
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                        <input type="text" th:value="${appointment.patient.firstName + ' ' + appointment.patient.lastName}" class="w-full bg-gray-100 px-4 py-2 border rounded-lg" readonly />
+                    </div>
+                    <div>
+                        <label for="edit-doctor" class="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+                        <select id="edit-doctor" th:field="*{doctor}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                            <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="edit-appointmentDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="edit-appointmentDate" th:field="*{appointmentDate}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="edit-appointmentTime" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                            <input type="time" id="edit-appointmentTime" th:field="*{appointmentTime}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="edit-status" th:field="*{status}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                            <option th:each="s : ${T(com.hospital.hospitalmanagementsystem.model.Appointment.Status).values()}" th:value="${s}" th:text="${s}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+                        <textarea id="edit-reason" th:field="*{reason}" rows="4" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors">Update Appointment</button>
+                        <a th:href="@{/receptionist/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', () => userMenu.classList.toggle('hidden'));
+        }
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        }
+        document.addEventListener('click', function(event) {
+            if (userMenuBtn && userMenu && !userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+            if (mobileMenuButton && mobileMenu && !mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        const doctorSelect = document.getElementById('doctor');
+        const availabilityInfo = document.getElementById('availability-info');
+        const availableDatesList = document.getElementById('available-dates-list');
+
+        if (doctorSelect) {
+            doctorSelect.addEventListener('change', async function() {
+                const doctorId = this.value;
+                if (!doctorId) {
+                    availabilityInfo.classList.add('hidden');
+                    return;
+                }
+
+                availableDatesList.innerHTML = '<span class="italic">Loading...</span>';
+                availabilityInfo.classList.remove('hidden');
+
+                try {
+                    const response = await fetch(`/receptionist/doctors/${doctorId}/availability`);
+                    if (!response.ok) {
+                        throw new Error('Could not fetch availability.');
+                    }
+                    const availableDates = await response.json();
+
+                    if (availableDates.length > 0) {
+                        let datesHtml = availableDates.map(date => `<span class="inline-block bg-blue-200 text-blue-800 rounded-full px-3 py-1 mr-2 mb-2">${date}</span>`).join('');
+                        availableDatesList.innerHTML = datesHtml;
+                    } else {
+                        availableDatesList.innerHTML = '<span class="font-semibold text-red-600">No available dates found for this doctor.</span>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching availability:', error);
+                    availableDatesList.innerHTML = '<span class="font-semibold text-red-600">Could not load availability.</span>';
+                }
+            });
+        }
+
+        const successAlert = document.getElementById('success-alert');
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.opacity = '0';
+                setTimeout(() => {
+                    successAlert.remove();
+                }, 1000); // Wait for fade out transition to finish
+            }, 5000); // 5 seconds delay
+        }
+    });
+</script>
+</body>
+</html>

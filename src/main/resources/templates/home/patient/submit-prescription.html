@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <title>Submit Prescription - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover { color: #2563eb; }
+        .nav-link:hover:after { width: 100%; }
+        .login-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-[#d3eaf2]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+
+    <nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/" class="logo">
+                <i class="fas fa-heartbeat logo-icon"></i>
+                <span class="logo-text">Health<span>First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="/" class="nav-link text-gray-700 font-medium">Home</a>
+                <a href="/dashboard" class="nav-link text-gray-700 font-medium">Dashboard</a>
+                <a href="/pharmacy" class="nav-link text-gray-700 font-medium">Pharmacy</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                        <span class="font-medium" th:text="${patient != null ? (patient.firstName + ' ' + patient.lastName) : 'Patient'}">Patient Name</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                        <a href="/patient/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                        <div class="border-t border-gray-100"></div>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobileMenuBtn" class="text-gray-700 p-2 focus:outline-none"><i class="fas fa-bars text-2xl"></i></button>
+                </div>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden bg-white shadow-lg w-full absolute left-0 p-4 z-50">
+        </div>
+    </nav>
+
+    <main class="flex-1 p-4 md:p-6">
+        <div class="rounded-2xl bg-white/80 p-4 md:p-6 shadow-lg backdrop-blur-lg">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Submit Your Prescription</h1>
+                <a th:href="@{/patient/prescriptions}" class="text-blue-600 font-semibold hover:text-blue-700 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to My Prescriptions
+                </a>
+            </div>
+
+            <div th:if="${successMessage}" class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg border border-green-200" role="alert">
+                <span class="font-medium">Success!</span> <span th:text="${successMessage}"></span>
+            </div>
+
+            <div th:if="${errorMessage}" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200" role="alert">
+                <span class="font-medium">Error!</span> <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form th:action="@{/patient/prescriptions/submit}" th:object="${prescription}" method="post" enctype="multipart/form-data" class="space-y-6">
+
+                <div>
+                    <label for="instructions" class="block text-sm font-medium text-slate-700 mb-1">Instructions or Notes (Optional)</label>
+                    <textarea id="instructions" th:field="*{instructions}" rows="4" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label for="prescriptionFile" class="block text-sm font-medium text-slate-700 mb-1">Upload Prescription File</label>
+                    <input type="file" id="prescriptionFile" name="prescriptionFile" required
+                           class="block w-full text-sm text-slate-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-blue-50 file:text-blue-700
+                                  hover:file:bg-blue-100"/>
+                    <div th:if="${#fields.hasErrors('filePath')}" th:errors="*{filePath}" class="text-sm text-red-600 mt-1"></div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition shadow hover:shadow-md w-full md:w-auto">
+                        Submit Prescription
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="py-4 px-6 text-center text-sm text-slate-600">
+        <p>© 2025 HealthFirst Hospital Management System</p>
+    </footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        // --- Navbar Scroll Effect ---
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md', 'bg-white');
+                navbar.classList.remove('bg-white/90');
+            } else {
+                navbar.classList.remove('shadow-md', 'bg-white');
+                navbar.classList.add('bg-white/90');
+            }
+        });
+
+        // --- User Menu Dropdown Toggle ---
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        if(userMenuBtn) {
+            userMenuBtn.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+            });
+            // Hide dropdown if clicked outside
+            document.addEventListener('click', function(event) {
+                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- Mobile Menu Toggle ---
+        // (Add logic here if needed for a full mobile menu experience)
+    });
+</script>
+
+</body>
+</html>

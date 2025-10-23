@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HealthFirst - Pending Prescriptions</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+
+    <style>
+        body { background-color: #d3eaf2; font-family: "Public Sans", "Noto Sans", sans-serif; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<!-- Navigation -->
+<nav class="sticky top-0 z-50 w-full bg-white shadow-sm">
+    <div class="container mx-auto flex justify-between items-center py-3 px-4">
+        <a href="/dashboard" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-3">
+            <a href="/dashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">
+        <i class="fas fa-clipboard-list mr-3 text-blue-600"></i>Pending Prescriptions
+    </h1>
+
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded" role="alert">
+        <div class="flex">
+            <i class="fas fa-check-circle mr-2 mt-1"></i>
+            <p th:text="${successMessage}"></p>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded" role="alert">
+        <div class="flex">
+            <i class="fas fa-exclamation-circle mr-2 mt-1"></i>
+            <p th:text="${errorMessage}"></p>
+        </div>
+    </div>
+
+    <!-- Prescriptions List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-slate-800">
+                    <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-bold mr-2" 
+                          th:text="${#lists.size(prescriptions)}">0</span>
+                    Prescriptions Awaiting Fulfillment
+                </h2>
+                <button onclick="location.reload()" class="text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Prescription ID
+                        </th>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date & Time
+                        </th>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Patient
+                        </th>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Items
+                        </th>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Prescription Row -->
+                    <tr th:each="prescription : ${prescriptions}" class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6 whitespace-nowrap">
+                            <span class="text-sm font-semibold text-gray-900">#<span th:text="${prescription.id}">123</span></span>
+                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap">
+                            <div class="text-sm text-gray-900" th:text="${#temporals.format(prescription.prescriptionDate, 'dd MMM yyyy')}">21 Sep 2025</div>
+                            <div class="text-xs text-gray-500" th:text="${#temporals.format(prescription.prescriptionDate, 'HH:mm')}">14:30</div>
+                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900" 
+                                         th:text="${prescription.medicalRecord?.patient?.firstName + ' ' + prescription.medicalRecord?.patient?.lastName}">
+                                        John Doe
+                                    </div>
+                                    <div class="text-xs text-gray-500" th:if="${prescription.medicalRecord?.patient?.email}" 
+                                         th:text="${prescription.medicalRecord?.patient?.email}">
+                                        john@example.com
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <i class="fas fa-pills mr-1"></i>
+                                <span th:text="${#lists.size(prescription.items)}">3</span> items
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span th:text="${prescription.status}">PENDING</span>
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap text-sm font-medium">
+                            <a th:href="@{/pharmacist/prescriptions/{id}(id=${prescription.id})}" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                                <i class="fas fa-eye mr-2"></i>
+                                View & Fulfill
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Empty State -->
+                    <tr th:if="${#lists.isEmpty(prescriptions)}">
+                        <td colspan="6" class="py-12 px-6 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="h-24 w-24 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                                    <i class="fas fa-check-circle text-green-600 text-4xl"></i>
+                                </div>
+                                <p class="text-gray-600 text-lg font-medium mb-2">All Caught Up!</p>
+                                <p class="text-gray-500">No pending prescriptions at the moment.</p>
+                                <a href="/dashboard" class="mt-4 text-blue-600 hover:text-blue-800 font-medium">
+                                    <i class="fas fa-arrow-left mr-2"></i>Return to Dashboard
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6" th:if="${!#lists.isEmpty(prescriptions)}">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
+                    <i class="fas fa-prescription text-indigo-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Pending</dt>
+                        <dd class="text-lg font-semibold text-gray-900" th:text="${#lists.size(prescriptions)}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+                    <i class="fas fa-calendar-day text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Today's Prescriptions</dt>
+                        <dd class="text-lg font-semibold text-gray-900" 
+                            th:text="${#lists.size(prescriptions.?[#temporals.format(prescriptionDate, 'yyyy-MM-dd') == #temporals.format(#temporals.createToday(), 'yyyy-MM-dd')])}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-orange-100 rounded-lg p-3">
+                    <i class="fas fa-exclamation-triangle text-orange-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Urgent (>24h old)</dt>
+                        <dd class="text-lg font-semibold text-gray-900" 
+                            th:text="${#lists.size(prescriptions.?[prescriptionDate.isBefore(#temporals.createNow().minusDays(1))])}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HealthFirst - Pharmacist Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900"/>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+
+    <style>
+        body {
+            background-color: #d3eaf2;
+            font-family: "Public Sans", "Noto Sans", sans-serif;
+        }
+        .modal {
+            display: none;
+        }
+        .custom-select-container {
+            position: relative;
+        }
+        .custom-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-top: 0.25rem;
+            max-height: 15rem; /* max-h-60 */
+            overflow-y: auto;
+            z-index: 50;
+            display: none; /* Hidden by default */
+        }
+        .custom-select-options.open {
+            display: block; /* Shown when open */
+        }
+        .custom-select-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        .custom-select-option:hover {
+            background-color: #e5e7eb; /* bg-gray-200 */
+        }
+
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        .responsive-table { -webkit-overflow-scrolling: touch; }
+
+    </style>
+</head>
+<body class="bg-[#d3eaf2]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+    <nav class="sticky top-0 z-50 w-full bg-[#d3eaf2]/80 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a href="/" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="flex items-center space-x-3">
+                <a th:href="@{/logout}" class="bg-white text-red-600 border border-red-600 px-5 py-2 rounded-full font-medium hover:bg-red-50 transition">Logout</a>
+                <button id="mobileMenuBtn" class="md:hidden text-gray-700 focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden bg-white/80 backdrop-blur-md w-full absolute left-0 p-4 shadow-lg md:hidden">
+            <div class="flex flex-col space-y-3">
+                <a th:href="@{/logout}" class="text-red-500 py-2 font-medium flex items-center"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="layout-container flex h-full grow flex-col">
+        <main class="flex-1 p-4 md:p-6">
+            <div class="rounded-2xl bg-white/80 p-4 md:p-6 shadow-lg backdrop-blur-lg">
+                <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Pharmacy Dashboard</h1>
+                    <div class="flex flex-col md:flex-row items-end md:items-center text-sm text-slate-600">
+                        <div class="flex items-center"><i class="fas fa-user-md mr-2"></i><a th:href="@{/pharmacist/profile}" class="hover:underline" th:text="${user.username}">pharmacist1</a></div>
+                        <span class="hidden md:inline mx-2">|</span>
+                        <div class="flex items-center mt-1 md:mt-0"><i class="far fa-clock mr-2"></i><span id="currentTime"></span></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 p-4 md:p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Total Inventory Value</p><i class="fas fa-dollar-sign text-2xl opacity-80"></i></div>
+                        <p id="totalInventoryValue" class="text-2xl md:text-3xl font-bold mt-2" th:text="'$' + ${#numbers.formatDecimal(totalInventoryValue, 1, 'COMMA', 2, 'POINT')}">$0.00</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 p-4 md:p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Unique Medications</p><i class="fas fa-pills text-2xl opacity-80"></i></div>
+                        <p id="medicineCount" class="text-2xl md:text-3xl font-bold mt-2" th:text="${medicineCount}">0</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-amber-500 to-red-600 p-4 md:p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Critical Medications</p><i class="fas fa-exclamation-circle text-2xl opacity-80"></i></div>
+                        <p id="criticalCount" class="text-2xl md:text-3xl font-bold mt-2" th:text="${criticalCount}">0</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 p-4 md:p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Pending Prescriptions</p><i class="fas fa-clipboard-list text-2xl opacity-80"></i></div>
+                        <p id="pendingPrescriptionsCount" class="text-2xl md:text-3xl font-bold mt-2" th:text="${pendingPrescriptionsCount}">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <a th:href="@{/pharmacist/medicines/create}" class="block rounded-lg bg-sky-50 p-5 border-l-4 border-sky-500 hover:bg-sky-100 transition">
+                        <div class="flex justify-between items-center"><div><h3 class="font-semibold text-sky-800">Add Medicine</h3><p class="text-sm text-slate-600 mt-1">Create new entry</p></div><i class="fas fa-plus-circle text-sky-500 text-3xl"></i></div>
+                    </a>
+                    <a th:href="@{/pharmacist/prescriptions}" class="block rounded-lg bg-sky-50 p-5 border-l-4 border-sky-500 hover:bg-sky-100 transition">
+                        <div class="flex justify-between items-center"><div><h3 class="font-semibold text-sky-800">Prescriptions</h3><p class="text-sm text-slate-600 mt-1">View & fulfill</p></div><i class="fas fa-clipboard-list text-sky-500 text-3xl"></i></div>
+                    </a>
+                    <a th:href="@{/pharmacist/reports}" class="block rounded-lg bg-purple-50 p-5 border-l-4 border-purple-500 hover:bg-purple-100 transition">
+                        <div class="flex justify-between items-center"><div><h3 class="font-semibold text-purple-800">Reports</h3><p class="text-sm text-slate-600 mt-1">View analytics</p></div><i class="fas fa-chart-bar text-purple-500 text-3xl"></i></div>
+                    </a>
+                    <a href="#" class="block rounded-lg bg-amber-50 p-4 border-l-4 border-amber-500 hover:bg-amber-100 transition">
+                        <div class="flex justify-between items-center"><div><h3 class="font-semibold text-amber-800">Critical Stock</h3><p class="text-sm text-slate-600 mt-1">Low or expired</p></div><i class="fas fa-exclamation-triangle text-amber-500 text-2xl"></i></div>
+                    </a>
+                    <a href="#" class="block rounded-lg bg-emerald-50 p-5 border-l-4 border-emerald-500 hover:bg-emerald-100 transition">
+                        <div class="flex justify-between items-center"><div><h3 class="font-semibold text-emerald-800">Suppliers</h3><p class="text-sm text-slate-600 mt-1">Manage vendors</p></div><i class="fas fa-truck text-emerald-500 text-3xl"></i></div>
+                    </a>
+                </div>
+                <div class="mb-4">
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <div class="flex-grow">
+                            <div class="relative">
+                                <input type="text" id="searchInput" placeholder="Search medicines by name, brand..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div class="absolute left-3 top-2.5 text-gray-400">
+                                    <i class="fas fa-search" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="custom-select-container w-full md:w-64">
+                                <input type="hidden" id="categoryFilterValue" value="">
+                                <div id="categoryFilterTrigger" class="flex justify-between items-center w-full px-4 py-2 border border-gray-300 rounded-lg cursor-pointer bg-white">
+                                    <span id="categoryFilterText" class="text-gray-700">All Categories</span>
+                                    <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                                </div>
+                                <div id="categoryFilterOptions" class="custom-select-options">
+                                    <div class="custom-select-option" data-value="">All Categories</div>
+                                    <div class="custom-select-option" data-value="Analgesic">Analgesic (Painkiller)</div>
+                                    <div class="custom-select-option" data-value="Antibiotic">Antibiotic</div>
+                                    <div class="custom-select-option" data-value="Antihistamine">Antihistamine (Allergy)</div>
+                                    <div class="custom-select-option" data-value="Antiviral">Antiviral</div>
+                                    <div class="custom-select-option" data-value="Antifungal">Antifungal</div>
+                                    <div class="custom-select-option" data-value="Cardiovascular">Cardiovascular</div>
+                                    <div class="custom-select-option" data-value="Dermatological">Dermatological (Skin)</div>
+                                    <div class="custom-select-option" data-value="Diabetic">Diabetic</div>
+                                    <div class="custom-select-option" data-value="Gastrointestinal">Gastrointestinal</div>
+                                    <div class="custom-select-option" data-value="Hormonal">Hormonal</div>
+                                    <div class="custom-select-option" data-value="Neurological">Neurological</div>
+                                    <div class="custom-select-option" data-value="Respiratory">Respiratory</div>
+                                    <div class="custom-select-option" data-value="Vitamin">Vitamin & Supplement</div>
+                                    <div class="custom-select-option" data-value="Other">Other</div>
+                                </div>
+                            </div>
+                            <button id="refreshButton" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-semibold text-slate-800">Medication Inventory</h2><div id="tableLoadingIndicator" style="display: none;" class="flex items-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mr-2"></div><span class="text-sm text-slate-600">Updating data...</span></div></div>
+                    <div class="overflow-x-auto responsive-table">
+                        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                            <thead class="bg-slate-50 text-slate-700"><tr><th class="py-3 px-4 text-left font-medium text-sm">Name</th><th class="py-3 px-4 text-left font-medium text-sm">Category</th><th class="py-3 px-4 text-left font-medium text-sm">Manufacturer</th><th class="py-3 px-4 text-left font-medium text-sm">Stock</th><th class="py-3 px-4 text-left font-medium text-sm">Price</th><th class="py-3 px-4 text-left font-medium text-sm">Expiry Date</th><th class="py-3 px-4 text-left font-medium text-sm">Status</th><th class="py-3 px-4 text-left font-medium text-sm">Actions</th></tr></thead>
+                            <tbody class="divide-y divide-slate-200" id="medicinesTableBody" th:fragment="medicinesTableBody">
+                            <tr th:if="${#lists.isEmpty(medicines)}">
+                                <td colspan="8" class="py-8 px-4 text-center text-slate-500">
+                                    <i class="fas fa-box-open text-slate-400 text-3xl mb-2"></i>
+                                    <p>No medications found in the inventory.</p>
+                                </td>
+                            </tr>
+                            <tr th:each="medicine : ${medicines}" th:id="'medicine-' + ${medicine.id}" class="hover:bg-gray-50 transition-colors duration-200" th:classappend="${!medicine.active} ? 'opacity-60 bg-slate-50' : ''">
+                                <td class="py-3 px-4 text-sm text-slate-800 font-medium" th:text="${medicine.name}"></td>
+                                <td class="py-3 px-4 text-sm text-slate-600" th:text="${medicine.category}"></td>
+                                <td class="py-3 px-4 text-sm text-slate-600" th:text="${medicine.manufacturer}"></td>
+                                <td class="py-3 px-4 text-sm text-slate-600">
+                                    <span class="stock-value font-semibold" th:text="${medicine.stock}"></span>
+                                    <div class="inline-flex ml-2">
+                                        <button class="quick-decrement text-xs bg-red-100 hover:bg-red-200 text-red-800 px-1 rounded mr-1" th:disabled="${!medicine.active}">-</button>
+                                        <button class="quick-increment text-xs bg-green-100 hover:bg-green-200 text-green-800 px-1 rounded" th:disabled="${!medicine.active}">+</button>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-slate-600" th:text="'$' + ${#numbers.formatDecimal(medicine.price, 1, 'COMMA', 2, 'POINT')}"></td>
+                                <td class="py-3 px-4 text-sm" th:classappend="${medicine.expiryDate != null and medicine.expiryDate.isBefore(today)} ? 'text-red-600 font-semibold' : 'text-slate-600'" th:text="${medicine.expiryDate != null ? medicine.expiryDate : 'N/A'}"></td>
+                                <td class="py-3 px-4">
+                                    <span th:if="${!medicine.active}" class="inline-flex items-center rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-800"><i class="fas fa-toggle-off mr-1"></i> Inactive</span>
+                                    <span th:if="${medicine.active}">
+                                        <span th:if="${medicine.expiryDate != null and medicine.expiryDate.isBefore(today)}" class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800"><i class="fas fa-times-circle mr-1"></i> Expired</span>
+                                        <span th:if="${medicine.expiryDate == null or !medicine.expiryDate.isBefore(today)}" th:switch="${medicine.stock <= 10}">
+                                            <span th:case="true" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800"><i class="fas fa-exclamation-triangle mr-1"></i> Low Stock</span>
+                                            <span th:case="false" class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"><i class="fas fa-check-circle mr-1"></i> In Stock</span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 flex gap-3">
+                                    <a th:href="@{/medicines/edit/{id}(id=${medicine.id})}" class="text-blue-600 hover:text-blue-800" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <button th:if="${medicine.active}" class="deactivate-btn text-red-600 hover:text-red-800" th:attr="data-id=${medicine.id}, data-name=${medicine.name}" title="Deactivate">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button th:if="${!medicine.active}" class="reactivate-btn text-green-600 hover:text-green-800" th:attr="data-id=${medicine.id}, data-name=${medicine.name}" title="Reactivate">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="py-4 px-6 text-center text-sm text-slate-600">
+            <p>© 2025 HealthFirst Hospital Management System</p>
+        </footer>
+    </div>
+</div>
+<div id="actionModal" class="modal fixed z-50 inset-0 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-black bg-opacity-50 absolute inset-0" id="modal-overlay"></div>
+        <div class="bg-white rounded-lg shadow-xl p-6 m-4 max-w-sm w-full z-10">
+            <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-4">Confirm Action</h3>
+            <p id="modalText" class="mb-6"></p>
+            <div class="flex justify-end gap-4">
+                <button id="cancelActionBtn" class="px-4 py-2 text-sm font-medium bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300">Cancel</button>
+                <button id="confirmActionBtn" class="px-4 py-2 text-sm font-medium text-white rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+
+        const refreshButton = document.getElementById('refreshButton');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const actionModal = document.getElementById('actionModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const confirmActionBtn = document.getElementById('confirmActionBtn');
+        const cancelActionBtn = document.getElementById('cancelActionBtn');
+        const medicinesTableBody = document.getElementById('medicinesTableBody');
+        const tableLoadingIndicator = document.getElementById('tableLoadingIndicator');
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        const categoryFilterTrigger = document.getElementById('categoryFilterTrigger');
+        const categoryFilterOptions = document.getElementById('categoryFilterOptions');
+        const categoryFilterText = document.getElementById('categoryFilterText');
+        const categoryFilterValue = document.getElementById('categoryFilterValue');
+
+
+        let actionToConfirm = null;
+        let searchTimeout;
+
+        mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+        refreshButton.addEventListener('click', () => {
+            searchInput.value = '';
+            categoryFilter.value = '';
+            updateTableFragment('/pharmacist/medicines-table');
+        });
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = searchInput.value.trim();
+                const category = categoryFilterValue.value;
+                let url = `/pharmacist/medicines-table?search=${encodeURIComponent(searchInput.value.trim())}`;
+                if (category) {
+                    url += `&category=${encodeURIComponent(category)}`;
+                }
+                updateTableFragment(url);
+            }, 300);
+        });
+
+        categoryFilterTrigger.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent document click from closing it immediately
+            categoryFilterOptions.classList.toggle('open');
+        });
+
+        categoryFilterOptions.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('custom-select-option')) {
+                const selectedText = e.target.textContent;
+                const selectedValue = e.target.dataset.value;
+
+                // Update the UI and hidden input value
+                categoryFilterText.textContent = selectedText;
+                categoryFilterValue.value = selectedValue;
+
+                // Close the dropdown
+                categoryFilterOptions.classList.remove('open');
+
+                // Trigger the filtering logic
+                filterMedicines();
+            }
+        });
+
+        document.addEventListener('click', () => {
+            categoryFilterOptions.classList.remove('open');
+        });
+
+        function filterMedicines() {
+            const searchTerm = searchInput.value.trim();
+            const category = categoryFilterValue.value; // MODIFIED: Read from hidden input
+
+            let url = '/pharmacist/medicines-table?';
+            const params = new URLSearchParams();
+
+            if (searchTerm) {
+                params.append('search', searchTerm);
+            }
+            if (category) {
+                params.append('category', category);
+            }
+            updateTableFragment(url + params.toString());
+        }
+
+        medicinesTableBody.addEventListener('click', function(event) {
+            const button = event.target.closest('button');
+            if (!button) return;
+
+            if (button.classList.contains('deactivate-btn')) {
+                openActionModal('deactivate', button.dataset.id, button.dataset.name);
+            } else if (button.classList.contains('reactivate-btn')) {
+                openActionModal('reactivate', button.dataset.id, button.dataset.name);
+            } else if (button.classList.contains('quick-increment')) {
+                const row = button.closest('tr');
+                const id = row.id.replace('medicine-', '');
+                const stockSpan = row.querySelector('.stock-value');
+                const currentStock = parseInt(stockSpan.textContent);
+                updateStock(id, currentStock + 1);
+            } else if (button.classList.contains('quick-decrement')) {
+                const row = button.closest('tr');
+                const id = row.id.replace('medicine-', '');
+                const stockSpan = row.querySelector('.stock-value');
+                const currentStock = parseInt(stockSpan.textContent);
+                updateStock(id, currentStock - 1);
+            }
+        });
+
+        confirmActionBtn.addEventListener('click', () => { if (actionToConfirm) actionToConfirm(); });
+        cancelActionBtn.addEventListener('click', closeActionModal);
+        modalOverlay.addEventListener('click', closeActionModal);
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        async function updateDashboardStats() {
+            try {
+                const response = await fetch('/pharmacist/dashboard-stats');
+                const stats = await response.json();
+                document.getElementById('totalInventoryValue').textContent = '$' + stats.totalInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('medicineCount').textContent = stats.medicineCount;
+                document.getElementById('criticalCount').textContent = stats.criticalCount;
+                document.getElementById('pendingPrescriptionsCount').textContent = stats.pendingPrescriptionsCount;
+            } catch (error) {
+                console.error('Failed to update dashboard stats:', error);
+            }
+        }
+
+        async function updateTableFragment(url) {
+            tableLoadingIndicator.style.display = 'flex';
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                medicinesTableBody.innerHTML = await response.text();
+            } catch (error) {
+                console.error('Failed to update table:', error);
+                medicinesTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-red-600">Failed to load data. Please try again.</td></tr>`;
+            } finally {
+                tableLoadingIndicator.style.display = 'none';
+            }
+        }
+
+        function openActionModal(type, id, name) {
+            if (type === 'deactivate') {
+                modalTitle.textContent = 'Confirm Deactivation';
+                modalText.innerHTML = `Are you sure you want to deactivate <span class="font-semibold">${name}</span>?`;
+                confirmActionBtn.className = 'px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700';
+                confirmActionBtn.textContent = 'Deactivate';
+                actionToConfirm = () => performAction('deactivate', id);
+            } else if (type === 'reactivate') {
+                modalTitle.textContent = 'Confirm Reactivation';
+                modalText.innerHTML = `Are you sure you want to reactivate <span class="font-semibold">${name}</span>?`;
+                confirmActionBtn.className = 'px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700';
+                confirmActionBtn.textContent = 'Reactivate';
+                actionToConfirm = () => performAction('reactivate', id);
+            }
+            actionModal.style.display = 'block';
+        }
+
+        function closeActionModal() {
+            actionModal.style.display = 'none';
+            actionToConfirm = null;
+        }
+
+        async function performAction(type, id) {
+            const url = `/medicines/${type}/${id}`;
+            try {
+                const response = await fetch(url, { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || `Failed to ${type}.`);
+                await Promise.all([
+                    updateTableFragment('/pharmacist/medicines-table'),
+                    updateDashboardStats()
+                ]);
+            } catch (error) {
+                console.error(`${type} error:`, error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                closeActionModal();
+            }
+        }
+
+        async function updateStock(id, newStock) {
+            if (newStock < 0) return;
+            // No loading indicator needed here, as the whole table will refresh
+            try {
+                const response = await fetch(`/medicines/${id}/update-stock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newStock)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Failed to update stock.');
+
+                // Refresh both the table and the stats to ensure consistency
+                await Promise.all([
+                    updateTableFragment('/pharmacist/medicines-table'),
+                    updateDashboardStats()
+                ]);
+            } catch (error) {
+                console.error('Stock update error:', error);
+                alert('An error occurred while updating stock.');
+                // No need to revert UI, as the table will be refreshed with correct data
+            }
+        }
+
+        /**
+         * Updates the clock with the format: YYYY-MM-DD HH:MM:SS
+         */
+        function updateClock() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('currentTime').textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Invoice - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .service-item { border: 2px solid #e5e7eb; transition: all 0.3s ease; cursor: pointer; }
+        .service-item:hover { border-color: #3b82f6; }
+        .service-item.selected { border-color: #3b82f6; background-color: #eff6ff; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/static" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/dashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                    <h1 class="text-3xl font-bold">Create New Invoice</h1>
+                    <p class="text-blue-100 mt-2">Generate billing for medical services</p>
+                </div>
+                
+                <div class="p-6">
+                    <form id="invoiceForm" th:action="@{/accountant/invoices/create}" method="post">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <!-- Left Column - Patient & Basic Info -->
+                            <div class="lg:col-span-2 space-y-6">
+                                <!-- Patient Selection -->
+                                <div class="bg-gray-50 rounded-lg p-6">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Search Patient</label>
+                                            <div class="relative">
+                                                <input type="text" id="patientSearch" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search by name, email, or phone...">
+                                                <div class="absolute right-3 top-3">
+                                                    <i class="fas fa-search text-gray-400"></i>
+                                                </div>
+                                            </div>
+                                            <div id="patientSearchResults" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                                                <!-- Search results will be populated here -->
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Or Select from List</label>
+                                            <select id="patientSelect" name="patientId" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">Choose a patient...</option>
+                                                <option th:each="patient : ${patients}" th:value="${patient.id}" th:text="${patient.firstName + ' ' + patient.lastName + ' (' + patient.email + ')'}">John Doe (john@example.com)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Selected Patient Info -->
+                                    <div id="selectedPatientInfo" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <h4 class="font-medium text-blue-900 mb-2">Selected Patient:</h4>
+                                        <div class="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span class="text-gray-600">Name:</span>
+                                                <span id="patientName" class="font-medium ml-2"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">Email:</span>
+                                                <span id="patientEmail" class="font-medium ml-2"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">Phone:</span>
+                                                <span id="patientPhone" class="font-medium ml-2"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">ID:</span>
+                                                <span id="patientId" class="font-medium ml-2"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Invoice Details -->
+                                <div class="bg-gray-50 rounded-lg p-6">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Details</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Invoice Number</label>
+                                            <input type="text" name="invoiceNumber" id="invoiceNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Issue Date</label>
+                                            <input type="date" name="issueDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Due Date</label>
+                                            <input type="date" name="dueDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <label class="block text-gray-700 font-medium mb-2">Description</label>
+                                        <textarea name="description" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Brief description of services..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Services & Items -->
+                                <div class="bg-gray-50 rounded-lg p-6">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900">Services & Items</h3>
+                                        <button type="button" onclick="addCustomItem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                            <i class="fas fa-plus mr-2"></i> Add Custom Item
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Predefined Services -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                        <div class="service-item rounded-lg p-4" data-service="consultation" data-price="150">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900">General Consultation</h4>
+                                                    <p class="text-sm text-gray-600">Standard doctor consultation</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-blue-600">$150.00</p>
+                                                    <input type="checkbox" class="service-checkbox mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="service-item rounded-lg p-4" data-service="bloodtest" data-price="80">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900">Blood Test</h4>
+                                                    <p class="text-sm text-gray-600">Complete blood count</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-blue-600">$80.00</p>
+                                                    <input type="checkbox" class="service-checkbox mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="service-item rounded-lg p-4" data-service="xray" data-price="120">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900">X-Ray</h4>
+                                                    <p class="text-sm text-gray-600">Digital X-ray imaging</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-blue-600">$120.00</p>
+                                                    <input type="checkbox" class="service-checkbox mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="service-item rounded-lg p-4" data-service="surgery" data-price="2500">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900">Minor Surgery</h4>
+                                                    <p class="text-sm text-gray-600">Outpatient surgical procedure</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-blue-600">$2,500.00</p>
+                                                    <input type="checkbox" class="service-checkbox mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Custom Items Container -->
+                                    <div id="customItemsContainer" class="space-y-4">
+                                        <!-- Custom items will be added here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column - Invoice Summary -->
+                            <div class="space-y-6">
+                                <!-- Invoice Summary -->
+                                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Summary</h3>
+                                    
+                                    <div id="invoiceItems" class="space-y-2 mb-4">
+                                        <p class="text-gray-500 text-center py-4">No items selected</p>
+                                    </div>
+                                    
+                                    <div class="border-t pt-4 space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Subtotal:</span>
+                                            <span id="subtotal" class="font-medium">$0.00</span>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600">Tax (8%):</span>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="includeTax" class="mr-2" checked>
+                                                <span id="taxAmount" class="font-medium">$0.00</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600">Discount:</span>
+                                            <div class="flex items-center">
+                                                <input type="number" id="discountAmount" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm mr-2" placeholder="0" min="0" step="0.01">
+                                                <span class="text-sm text-gray-500">$</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="border-t pt-2">
+                                            <div class="flex justify-between text-lg font-bold">
+                                                <span>Total:</span>
+                                                <span id="totalAmount" class="text-blue-600">$0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 space-y-3">
+                                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                                            <i class="fas fa-file-invoice mr-2"></i> Create Invoice
+                                        </button>
+
+                                        <button type="button" onclick="previewInvoice()" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
+                                            <i class="fas fa-eye mr-2"></i> Preview
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generate invoice number
+        generateInvoiceNumber();
+        
+        // Set default dates
+        setDefaultDates();
+        
+        // Service item selection
+        setupServiceSelection();
+        
+        // Patient search functionality
+        setupPatientSearch();
+        
+        // Real-time calculation
+        setupCalculations();
+    });
+
+    function generateInvoiceNumber() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        document.getElementById('invoiceNumber').value = `INV-${year}-${month}${random}`;
+    }
+
+    function setDefaultDates() {
+        const today = new Date();
+        const dueDate = new Date();
+        dueDate.setDate(today.getDate() + 30);
+        
+        document.querySelector('input[name="issueDate"]').value = today.toISOString().split('T')[0];
+        document.querySelector('input[name="dueDate"]').value = dueDate.toISOString().split('T')[0];
+    }
+
+    function setupServiceSelection() {
+        document.querySelectorAll('.service-item').forEach(item => {
+            const checkbox = item.querySelector('.service-checkbox');
+            
+            item.addEventListener('click', function(e) {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                }
+                
+                if (checkbox.checked) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+                
+                updateInvoiceSummary();
+            });
+            
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+                updateInvoiceSummary();
+            });
+        });
+    }
+
+    function setupPatientSearch() {
+        const searchInput = document.getElementById('patientSearch');
+        const resultsDiv = document.getElementById('patientSearchResults');
+        const selectElement = document.getElementById('patientSelect');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query.length < 2) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            // Simulate search results (replace with actual API call)
+            const results = [
+                { id: 1, name: 'John Doe', email: 'john@example.com', phone: '+1-555-0123' },
+                { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '+1-555-0124' },
+                { id: 3, name: 'Bob Johnson', email: 'bob@example.com', phone: '+1-555-0125' }
+            ].filter(patient => 
+                patient.name.toLowerCase().includes(query) || 
+                patient.email.toLowerCase().includes(query) ||
+                patient.phone.includes(query)
+            );
+            
+            displaySearchResults(results);
+        });
+        
+        selectElement.addEventListener('change', function() {
+            if (this.value) {
+                const option = this.options[this.selectedIndex];
+                selectPatient({
+                    id: this.value,
+                    name: option.text.split(' (')[0],
+                    email: option.text.match(/\((.*?)\)/)[1]
+                });
+            }
+        });
+    }
+
+    function displaySearchResults(results) {
+        const resultsDiv = document.getElementById('patientSearchResults');
+        
+        if (results.length === 0) {
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+        
+        resultsDiv.innerHTML = results.map(patient => `
+            <div class="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0" onclick="selectPatient(${JSON.stringify(patient).replace(/"/g, '&quot;')})">
+                <div class="font-medium">${patient.name}</div>
+                <div class="text-sm text-gray-600">${patient.email} • ${patient.phone}</div>
+            </div>
+        `).join('');
+        
+        resultsDiv.classList.remove('hidden');
+    }
+
+    function selectPatient(patient) {
+        document.getElementById('patientName').textContent = patient.name;
+        document.getElementById('patientEmail').textContent = patient.email;
+        document.getElementById('patientPhone').textContent = patient.phone || 'N/A';
+        document.getElementById('patientId').textContent = patient.id;
+        
+        document.getElementById('selectedPatientInfo').classList.remove('hidden');
+        document.getElementById('patientSearchResults').classList.add('hidden');
+        document.getElementById('patientSearch').value = patient.name;
+        document.getElementById('patientSelect').value = patient.id;
+    }
+
+    function setupCalculations() {
+        document.getElementById('includeTax').addEventListener('change', updateInvoiceSummary);
+        document.getElementById('discountAmount').addEventListener('input', updateInvoiceSummary);
+    }
+
+    function updateInvoiceSummary() {
+        const selectedServices = document.querySelectorAll('.service-item.selected');
+        const customItems = document.querySelectorAll('.custom-item');
+        const itemsContainer = document.getElementById('invoiceItems');
+        
+        let subtotal = 0;
+        let itemsHTML = '';
+        
+        // Add selected services
+        selectedServices.forEach(service => {
+            const price = parseFloat(service.dataset.price);
+            const name = service.querySelector('h4').textContent;
+            subtotal += price;
+            itemsHTML += `
+                <div class="flex justify-between text-sm">
+                    <span>${name}</span>
+                    <span>$${price.toFixed(2)}</span>
+                </div>
+            `;
+        });
+        
+        // Add custom items
+        customItems.forEach(item => {
+            const name = item.querySelector('.item-name').value;
+            const price = parseFloat(item.querySelector('.item-price').value) || 0;
+            if (name && price > 0) {
+                subtotal += price;
+                itemsHTML += `
+                    <div class="flex justify-between text-sm">
+                        <span>${name}</span>
+                        <span>$${price.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+        });
+        
+        if (itemsHTML === '') {
+            itemsHTML = '<p class="text-gray-500 text-center py-4">No items selected</p>';
+        }
+        
+        itemsContainer.innerHTML = itemsHTML;
+        
+        // Calculate totals
+        const includeTax = document.getElementById('includeTax').checked;
+        const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+        
+        const tax = includeTax ? subtotal * 0.08 : 0;
+        const total = subtotal + tax - discountAmount;
+        
+        document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('taxAmount').textContent = `$${tax.toFixed(2)}`;
+        document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function addCustomItem() {
+        const container = document.getElementById('customItemsContainer');
+        const itemId = 'custom-' + Date.now();
+        
+        const itemHTML = `
+            <div class="custom-item bg-white border border-gray-300 rounded-lg p-4" id="${itemId}">
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-medium text-gray-900">Custom Item</h4>
+                    <button type="button" onclick="removeCustomItem('${itemId}')" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                        <input type="text" class="item-name w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Service/Item name" onchange="updateInvoiceSummary()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                        <input type="number" class="item-price w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" min="0" step="0.01" onchange="updateInvoiceSummary()">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Item description..."></textarea>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', itemHTML);
+    }
+
+    function removeCustomItem(itemId) {
+        document.getElementById(itemId).remove();
+        updateInvoiceSummary();
+    }
+
+    function previewInvoice() {
+        // Collect form data and open preview window
+        const formData = new FormData(document.getElementById('invoiceForm'));
+        // Implementation would open a preview modal or new window
+        alert('Preview functionality would open a modal with invoice preview');
+    }
+
+    // Update form submission handler
+    document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Validate patient selection
+        const patientId = document.getElementById('patientSelect').value;
+        if (!patientId) {
+            alert('Please select a patient before creating the invoice.');
+            return;
+        }
+
+        // Validate at least one item is selected
+        const selectedServices = document.querySelectorAll('.service-item.selected');
+        const customItems = document.querySelectorAll('.custom-item');
+
+        let hasItems = selectedServices.length > 0;
+        customItems.forEach(item => {
+            const name = item.querySelector('.item-name').value;
+            const price = parseFloat(item.querySelector('.item-price').value) || 0;
+            if (name && price > 0) {
+                hasItems = true;
+            }
+        });
+
+        if (!hasItems) {
+            alert('Please add at least one service or item to the invoice.');
+            return;
+        }
+
+        // Collect all invoice data
+        const invoiceData = {
+            patientId: patientId,
+            invoiceNumber: document.getElementById('invoiceNumber').value,
+            issueDate: document.querySelector('input[name="issueDate"]').value,
+            dueDate: document.querySelector('input[name="dueDate"]').value,
+            description: document.querySelector('textarea[name="description"]').value,
+            items: [],
+            subtotal: parseFloat(document.getElementById('subtotal').textContent.replace('$', '')),
+            tax: document.getElementById('includeTax').checked ?
+                parseFloat(document.getElementById('taxAmount').textContent.replace('$', '')) : 0,
+            discount: parseFloat(document.getElementById('discountAmount').value) || 0,
+            total: parseFloat(document.getElementById('totalAmount').textContent.replace('$', ''))
+        };
+
+        // Add selected predefined services
+        selectedServices.forEach(service => {
+            const serviceName = service.querySelector('h4').textContent;
+            const servicePrice = parseFloat(service.dataset.price);
+
+            invoiceData.items.push({
+                description: serviceName,
+                quantity: 1,
+                unitPrice: servicePrice,
+                lineTotal: servicePrice
+            });
+        });
+
+        // Add custom items
+        customItems.forEach(item => {
+            const name = item.querySelector('.item-name').value;
+            const price = parseFloat(item.querySelector('.item-price').value) || 0;
+            const description = item.querySelector('textarea').value;
+
+            if (name && price > 0) {
+                invoiceData.items.push({
+                    description: name,
+                    quantity: 1,
+                    unitPrice: price,
+                    lineTotal: price,
+                    itemNotes: description
+                });
+            }
+        });
+
+        // Submit the form
+        submitInvoice(invoiceData);
+    });
+
+    function submitInvoice(invoiceData) {
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Invoice...';
+
+        // Send data to server
+        fetch('/accountant/invoices/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(invoiceData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redirect to invoice details page
+                    window.location.href = '/accountant/invoices/' + data.invoiceId;
+                } else {
+                    throw new Error(data.message || 'Failed to create invoice');
+                }
+            })
+            .catch(error => {
+                alert('Error creating invoice: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+    }
+
+    function previewInvoice() {
+        // Collect form data for preview
+        const patientId = document.getElementById('patientSelect').value;
+        if (!patientId) {
+            alert('Please select a patient before previewing.');
+            return;
+        }
+
+        const selectedServices = document.querySelectorAll('.service-item.selected');
+        const customItems = document.querySelectorAll('.custom-item');
+
+        let hasItems = selectedServices.length > 0;
+        customItems.forEach(item => {
+            const name = item.querySelector('.item-name').value;
+            const price = parseFloat(item.querySelector('.item-price').value) || 0;
+            if (name && price > 0) {
+                hasItems = true;
+            }
+        });
+
+        if (!hasItems) {
+            alert('Please add at least one service or item to preview.');
+            return;
+        }
+
+        // Open preview in new window or modal
+        // For now, just show an alert - you can implement a proper preview modal
+        alert('Preview functionality: This will show a preview of the invoice before creation.');
+    }
+</script>
+</body>
+</html>

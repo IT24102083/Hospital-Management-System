@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Medical Record - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 50%; transform: translateX(-50%); background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover:after, .nav-link.active:after { width: 100%; }
+        .navbar-blur { background: rgba(255, 255, 255, 0.90); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: all 0.3s ease; }
+        .navbar-scrolled { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-gray-50 hero-gradient min-h-screen">
+
+<header id="navbar" class="navbar-blur sticky top-0 z-50">
+    <nav class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center text-decoration-none">
+                <i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i>
+                <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a class="nav-link text-gray-700 font-medium" href="/dashboard">Dashboard</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/appointments">Appointments</a>
+                <a class="nav-link active text-gray-700 font-medium" href="/doctor/records">Medical Records</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/patients">My Patients</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/availability">My Availability</a>
+            </div>
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium">Dr. John Smith</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header><main class="py-10">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6">Edit Medical Record</h2>
+
+        <div class="bg-white p-6 md:p-8 rounded-lg shadow-md max-w-3xl mx-auto">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Patient</label>
+                    <p class="text-lg font-semibold text-gray-800" th:text="${medicalRecord.patient.firstName + ' ' + medicalRecord.patient.lastName}"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Appointment Date</label>
+                    <p class="text-lg font-semibold text-gray-800" th:text="${#temporals.format(medicalRecord.appointment.appointmentDate, 'dd MMM yyyy')}"></p>
+                </div>
+            </div>
+
+            <form th:action="@{/doctor/records/update/{id}(id=${medicalRecord.id})}" th:object="${medicalRecord}" method="post">
+
+                <div class="mb-4">
+                    <label for="diagnosis" class="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
+                    <input type="text" id="diagnosis" th:field="*{diagnosis}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    <span th:if="${#fields.hasErrors('diagnosis')}" th:errors="*{diagnosis}" class="text-red-500 text-xs mt-1"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label for="symptoms" class="block text-sm font-medium text-gray-700 mb-1">Symptoms</label>
+                    <textarea id="symptoms" th:field="*{symptoms}" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <span th:if="${#fields.hasErrors('symptoms')}" th:errors="*{symptoms}" class="text-red-500 text-xs mt-1"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label for="treatment" class="block text-sm font-medium text-gray-700 mb-1">Treatment Plan</label>
+                    <textarea id="treatment" th:field="*{treatment}" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <span th:if="${#fields.hasErrors('treatment')}" th:errors="*{treatment}" class="text-red-500 text-xs mt-1"></span>
+                </div>
+
+                <div class="mb-6">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                    <textarea id="notes" th:field="*{notes}" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-4">
+                    <a th:href="@{/doctor/records}" class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-md hover:bg-gray-200 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

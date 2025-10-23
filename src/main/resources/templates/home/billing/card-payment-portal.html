@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Payment - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/card.css}">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s ease;
+        }
+        .loading-spinner {
+            width: 50px; height: 50px;
+            border: 5px solid rgba(37, 99, 235, 0.2);
+            border-top: 5px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%);
+        }
+
+        .card-input {
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        .card-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .security-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center text-green-600">
+                <i class="fas fa-shield-alt mr-2"></i>
+                <span class="text-sm font-medium">Secure Payment</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <div class="card-wrapper">
+                        <div class="card-container">
+                            <div id="creditCard" class="credit-card">
+                                <div class="card-face card-front">
+                                    <img id="cardBgFront" src="" alt="Card Background" class="card-bg-image">
+                                    <div class="card-bg-overlay"></div>
+
+                                    <div class="card-content">
+                                        <div class="flex justify-between items-start mb-8">
+                                            <div class="card-chip"></div>
+                                            <img id="cardTypeLogo" src="https://img.icons8.com/color/48/visa.png" alt="Card Type" class="card-logo">
+                                        </div>
+
+                                        <div class="card-number" id="cardNumberDisplay">
+                                            •••• •••• •••• ••••
+                                        </div>
+
+                                        <div class="flex justify-between items-end">
+                                            <div>
+                                                <div class="card-holder-label">Card Holder</div>
+                                                <div class="card-holder-name" id="cardNameDisplay">YOUR NAME</div>
+                                            </div>
+                                            <div>
+                                                <div class="card-expiry-label">Expires</div>
+                                                <div class="card-expiry-value" id="cardExpiryDisplay">••/••</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-face card-back">
+                                    <img id="cardBgBack" src="" alt="Card Background" class="card-bg-image">
+                                    <div class="card-bg-overlay"></div>
+
+                                    <div class="card-content">
+                                        <div class="magnetic-stripe"></div>
+                                        <div class="cvv-section">
+                                            <div class="cvv-label">CVV</div>
+                                            <div class="cvv-value" id="cardCvvDisplay">•••</div>
+                                        </div>
+                                        <div class="card-back-text">
+                                            This card is property of HealthFirst Payment Gateway.
+                                            If found, please return to the nearest branch.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="p-6">
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+
+                            <div class="space-y-3 mb-6">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Invoice Number:</span>
+                                    <span class="font-medium" th:text="${invoice.invoiceNumber}">INV-2024-001</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Service:</span>
+                                    <span class="font-medium" th:text="${invoice.description}">General Consultation</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Subtotal:</span>
+                                    <span class="font-medium">$<span th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2)}">180.00</span></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tax:</span>
+                                    <span class="font-medium">$<span th:text="${#numbers.formatDecimal(invoice.tax, 1, 2)}">20.00</span></span>
+                                </div>
+                                <div class="border-t pt-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-lg font-semibold">Total:</span>
+                                        <span class="text-xl font-bold text-blue-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">200.00</span></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-center text-green-600">
+                                    <i class="fas fa-shield-alt mr-2"></i>
+                                    <span>PCI DSS Compliant</span>
+                                </div>
+                                <div class="flex items-center text-green-600">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    <span>SSL Encrypted</span>
+                                </div>
+                                <div class="flex items-center text-green-600">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    <span>Fraud Protection</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                        <h1 class="text-2xl font-bold">Card Payment</h1>
+                        <p class="text-blue-100 mt-1">Enter your card details to complete payment</p>
+                    </div>
+
+                    <div class="p-6">
+                        <form id="cardPaymentForm" th:action="@{/patient/invoices/{id}/pay/card(id=${invoice.id})}" method="POST">
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Card Number</label>
+                                <div class="relative">
+                                    <input type="text" id="cardNumber" name="cardNumber"
+                                           class="card-input w-full px-4 py-3 rounded-lg"
+                                           placeholder="1234 5678 9012 3456"
+                                           maxlength="19"
+                                           required>
+                                    <div class="absolute right-3 top-3 flex space-x-2">
+                                        <i class="fab fa-cc-visa text-blue-600 text-xl"></i>
+                                        <i class="fab fa-cc-mastercard text-red-500 text-xl"></i>
+                                        <i class="fab fa-cc-amex text-blue-500 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Cardholder Name</label>
+                                <input type="text" id="cardName" name="cardName"
+                                       class="card-input w-full px-4 py-3 rounded-lg"
+                                       placeholder="John Doe"
+                                       maxlength="22"
+                                       required>
+                                <p class="text-xs text-gray-500 mt-1">Maximum 22 characters</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-gray-700 font-medium mb-2">Expiry Date</label>
+                                    <input type="text" id="cardExpiry" name="cardExpiry"
+                                           class="card-input w-full px-4 py-3 rounded-lg"
+                                           placeholder="MM/YY"
+                                           maxlength="5"
+                                           required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-medium mb-2">CVV</label>
+                                    <input type="text" id="cardCvv" name="cardCvc"
+                                           class="card-input w-full px-4 py-3 rounded-lg"
+                                           placeholder="123"
+                                           maxlength="4"
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Billing Address</label>
+                                <input type="text" id="billingAddress" name="billingAddress"
+                                       class="card-input w-full px-4 py-3 rounded-lg mb-3"
+                                       placeholder="Street Address"
+                                       required>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" id="billingCity" name="billingCity"
+                                           class="card-input w-full px-4 py-3 rounded-lg"
+                                           placeholder="City"
+                                           required>
+                                    <input type="text" id="billingZip" name="billingZip"
+                                           class="card-input w-full px-4 py-3 rounded-lg"
+                                           placeholder="ZIP Code"
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="saveCard" name="saveCard"
+                                           class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Save this card for future payments</span>
+                                </label>
+                            </div>
+
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-center">
+                                    <i class="fas fa-lock text-green-600 mr-3 security-badge"></i>
+                                    <div class="text-sm">
+                                        <p class="font-medium text-green-900">256-bit SSL Encryption</p>
+                                        <p class="text-green-700">Your payment information is secure and encrypted</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="payButton"
+                                    class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-4 px-6 rounded-lg transition text-lg shadow-lg">
+                                <i class="fas fa-lock mr-2"></i>
+                                Pay $<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">200.00</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script th:src="@{/js/card.js}"></script>
+<script>
+    // Loading Overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+    });
+</script>
+</body>
+</html>

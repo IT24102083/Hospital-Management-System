@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+  <link as="style"
+    href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900"
+    onload="this.rel='stylesheet'" rel="stylesheet" />
+  <title>Invoice Management - HealthFirst</title>
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <style>
+    body {
+      background-color: #f0f9ff;
+      font-family: "Public Sans", "Noto Sans", sans-serif;
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .bg-green-100 {
+      background-color: #dcfce7;
+    }
+
+    .text-green-800 {
+      color: #166534;
+    }
+
+    .bg-yellow-100 {
+      background-color: #fef9c3;
+    }
+
+    .text-yellow-800 {
+      color: #854d0e;
+    }
+
+    .bg-red-100 {
+      background-color: #fee2e2;
+    }
+
+    .text-red-800 {
+      color: #991b1b;
+    }
+
+    .bg-blue-100 {
+      background-color: #dbeafe;
+    }
+
+    .text-blue-800 {
+      color: #1e40af;
+    }
+
+    .bg-gray-100 {
+      background-color: #f3f4f6;
+    }
+
+    .text-gray-800 {
+      color: #1f2937;
+    }
+
+    .bg-cyan-100 {
+      background-color: #cffafe;
+    }
+
+    .text-cyan-800 {
+      color: #155e75;
+    }
+
+    .bg-gray-200 {
+      background-color: #e5e7eb;
+    }
+
+    .bg-purple-100 {
+      background-color: #f3e8ff;
+    }
+
+    .text-purple-800 {
+      color: #6b21a8;
+    }
+
+    html,
+    body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .responsive-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-[#f0f9ff]">
+  <div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+    <nav class="sticky top-0 z-50 w-full bg-white shadow-sm">
+      <div class="container mx-auto flex justify-between items-center py-3 px-4">
+        <a href="/accountant/dashboard" class="flex items-center">
+          <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+          <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="hidden md:flex space-x-6">
+          <a href="/dashboard" class="text-gray-700 hover:text-blue-600 font-medium py-1">Dashboard</a>
+          <a href="/accountant/invoices" class="text-blue-600 font-medium border-b-2 border-blue-600 py-1">Invoices</a>
+          <a href="/accountant/payment-plans" class="text-gray-700 hover:text-blue-600 font-medium py-1">Payment
+            Plans</a>
+          <a href="/accountant/reports" class="text-gray-700 hover:text-blue-600 font-medium py-1">Reports</a>
+        </div>
+        <div class="flex items-center space-x-3">
+          <a href="/dashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+            <i class="fas fa-arrow-left mr-2"></i> Dashboard
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="layout-container flex h-full grow flex-col">
+      <main class="flex-1 p-4 md:p-6">
+        <div class="mb-6">
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800">
+            Invoice Management
+          </h1>
+          <p class="text-slate-600 mt-1">
+            View and manage all patient invoices
+          </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+            <div class="flex items-center justify-between">
+              <p class="text-base font-medium text-slate-600">
+                Total Invoices
+              </p>
+              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <i class="fas fa-file-invoice text-blue-600"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold mt-2 text-slate-800" th:text="${totalInvoices ?: '0'}">
+              156
+            </p>
+            <p class="text-sm text-blue-600 mt-1">All time</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+            <div class="flex items-center justify-between">
+              <p class="text-base font-medium text-slate-600">Pending</p>
+              <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                <i class="fas fa-clock text-yellow-600"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold mt-2 text-slate-800" id="pendingCount">
+              24
+            </p>
+            <p class="text-sm text-yellow-600 mt-1">Awaiting payment</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+            <div class="flex items-center justify-between">
+              <p class="text-base font-medium text-slate-600">Overdue</p>
+              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-red-600"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold mt-2 text-slate-800" th:text="${overdueInvoices ?: '0'}">
+              7
+            </p>
+            <p class="text-sm text-red-600 mt-1">Past due date</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+            <div class="flex items-center justify-between">
+              <p class="text-base font-medium text-slate-600">Outstanding</p>
+              <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <i class="fas fa-dollar-sign text-purple-600"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold mt-2 text-slate-800">
+              $<span
+                th:text="${totalOutstanding != null ? #numbers.formatDecimal(totalOutstanding, 1, 'COMMA', 2, 'POINT') : '0.00'}">18,250</span>
+            </p>
+            <p class="text-sm text-purple-600 mt-1">Total balance</p>
+          </div>
+        </div>
+
+        <!-- Filters and Actions -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <div class="flex flex-wrap gap-3">
+              <select id="statusFilter"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PAID">Paid</option>
+                <option value="OVERDUE">Overdue</option>
+                <option value="PARTIALLY_PAID">Partially Paid</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+
+              <input type="date" id="dateFilter"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+              <input type="text" id="searchFilter" placeholder="Search invoice or patient..."
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <div class="flex space-x-3">
+              <a href="/accountant/invoices/create"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                <i class="fas fa-plus mr-2"></i>Create Invoice
+              </a>
+              <button onclick="exportInvoices()"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                <i class="fas fa-download mr-2"></i>Export
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoices Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="overflow-x-auto responsive-table">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice #
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Patient
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Issue Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Balance
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200" id="invoicesTableBody">
+                <tr th:each="invoice : ${invoices}" class="hover:bg-gray-50 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900" th:text="${invoice.invoiceNumber}">
+                      INV-2024-001
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-blue-600"></i>
+                      </div>
+                      <div>
+                        <div class="text-sm font-medium text-gray-900"
+                          th:text="${invoice.patient.firstName + ' ' + invoice.patient.lastName}">
+                          John Doe
+                        </div>
+                        <div class="text-sm text-gray-500" th:text="${invoice.patient.email}">
+                          john@email.com
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    th:text="${#temporals.format(invoice.issueDate, 'MMM dd, yyyy')}">
+                    Jan 15, 2024
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    th:text="${#temporals.format(invoice.dueDate, 'MMM dd, yyyy')}">
+                    Feb 15, 2024
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    $<span th:text="${#numbers.formatDecimal(invoice.total, 1, 2)}">1,500.00</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"
+                    th:classappend="${invoice.balanceDue > 0 ? 'text-red-600' : 'text-green-600'}">
+                    $<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">1,500.00</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span th:switch="${invoice.status.name()}">
+                      <span th:case="'PAID'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                      <span th:case="'PENDING'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                      <span th:case="'OVERDUE'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Overdue</span>
+                      <span th:case="'PARTIALLY_PAID'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Partially
+                        Paid</span>
+                      <span th:case="'CANCELLED'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-gray-800">Cancelled</span>
+                      <span th:case="'SENT'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">Sent</span>
+                      <span th:case="'DRAFT'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-200 text-gray-800">Draft</span>
+                      <span th:case="'REFUNDED'"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Refunded</span>
+                      <span th:case="*"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                        th:text="${invoice.status?.displayName}">Unknown</span>
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div class="flex space-x-2">
+                      <button th:onclick="|viewInvoice(${invoice.id})|" class="text-blue-600 hover:text-blue-900"
+                        title="View">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button th:onclick="|editInvoice(${invoice.id})|" class="text-indigo-600 hover:text-indigo-900"
+                        title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button th:onclick="|sendInvoice(${invoice.id})|" class="text-green-600 hover:text-green-900"
+                        title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div th:if="${invoices.totalPages > 1}"
+            class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <a th:if="${invoices.hasPrevious()}" th:href="@{/accountant/invoices(page=${invoices.number - 1})}"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+              </a>
+              <span th:unless="${invoices.hasPrevious()}"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                Previous
+              </span>
+              <a th:if="${invoices.hasNext()}" th:href="@{/accountant/invoices(page=${invoices.number + 1})}"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </a>
+              <span th:unless="${invoices.hasNext()}"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                Next
+              </span>
+            </div>
+
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" th:text="${invoices.number * invoices.size + 1}">1</span>
+                  to
+                  <span class="font-medium"
+                    th:text="${invoices.number * invoices.size + invoices.numberOfElements}">10</span>
+                  of
+                  <span class="font-medium" th:text="${invoices.totalElements}">97</span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <a th:if="${invoices.hasPrevious()}" th:href="@{/accountant/invoices(page=${invoices.number - 1})}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                  </a>
+                  <span th:unless="${invoices.hasPrevious()}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    <i class="fas fa-chevron-left"></i>
+                  </span>
+
+                  <a th:each="pageNum : ${#numbers.sequence(0, invoices.totalPages - 1)}"
+                    th:href="@{/accountant/invoices(page=${pageNum})}" th:text="${pageNum + 1}"
+                    class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                    th:classappend="${pageNum == invoices.number ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}">
+                  </a>
+
+                  <a th:if="${invoices.hasNext()}" th:href="@{/accountant/invoices(page=${invoices.number + 1})}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                  <span th:unless="${invoices.hasNext()}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    <i class="fas fa-chevron-right"></i>
+                  </span>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="py-4 px-6 text-center text-sm text-slate-600">
+        <p>© 2025 HealthFirst Hospital Management System</p>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Filter functionality
+      document
+        .getElementById("statusFilter")
+        .addEventListener("change", filterInvoices);
+      document
+        .getElementById("dateFilter")
+        .addEventListener("change", filterInvoices);
+      document
+        .getElementById("searchFilter")
+        .addEventListener("input", filterInvoices);
+
+      updateCounts();
+    });
+
+    function filterInvoices() {
+      const status = document.getElementById("statusFilter").value;
+      const date = document.getElementById("dateFilter").value;
+      const search = document
+        .getElementById("searchFilter")
+        .value.toLowerCase();
+
+      const rows = document.querySelectorAll("#invoicesTableBody tr");
+
+      rows.forEach((row) => {
+        let show = true;
+
+        if (status) {
+          const rowStatus = row
+            .querySelector(".rounded-full")
+            .textContent.trim()
+            .toUpperCase();
+          show = show && rowStatus.includes(status);
+        }
+
+        if (search) {
+          const text = row.textContent.toLowerCase();
+          show = show && text.includes(search);
+        }
+
+        row.style.display = show ? "" : "none";
+      });
+
+      updateCounts();
+    }
+
+    function updateCounts() {
+      const rows = document.querySelectorAll("#invoicesTableBody tr");
+      const visibleRows = Array.from(rows).filter(
+        (row) => row.style.display !== "none"
+      );
+
+      let pending = 0;
+      visibleRows.forEach((row) => {
+        const status = row
+          .querySelector(".rounded-full")
+          .textContent.trim()
+          .toUpperCase();
+        if (status.includes("PENDING")) pending++;
+      });
+
+      document.getElementById("pendingCount").textContent = pending;
+    }
+
+    function viewInvoice(invoiceId) {
+      window.location.href = `/accountant/invoices/${invoiceId}`;
+    }
+
+    function editInvoice(invoiceId) {
+      window.location.href = `/accountant/invoices/${invoiceId}/edit`;
+    }
+
+    function sendInvoice(invoiceId) {
+      if (confirm("Send invoice to patient via email?")) {
+        // API call to send invoice
+        alert("Invoice sent successfully!");
+      }
+    }
+
+    function exportInvoices() {
+      window.location.href = "/accountant/invoices/export";
+    }
+  </script>
+</body>
+
+</html>

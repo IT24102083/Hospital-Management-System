@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - HealthFirst</title>
+
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover { color: #2563eb; }
+        .nav-link:hover:after { width: 100%; }
+        .login-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+        <div class="hidden md:flex space-x-8">
+            <a href="/" class="nav-link text-gray-700 font-medium">Home</a>
+            <a href="/doctors" class="nav-link text-gray-700 font-medium">Doctors</a>
+            <a href="/pharmacy" class="nav-link text-gray-700 font-medium">Pharmacy</a>
+            <a href="/services" class="nav-link text-gray-700 font-medium">Services</a>
+            <a href="/about" class="nav-link text-gray-700 font-medium">About Us</a>
+            <a href="/contact" class="nav-link text-gray-700 font-medium">Contact</a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="/login" class="login-btn hidden sm:block text-white px-5 py-2 rounded-full">Login</a>
+            <div class="md:hidden">
+                <button id="mobileMenuBtn" class="text-gray-700 p-2 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden bg-white shadow-lg w-full absolute left-0 p-4 z-50">
+        <div class="flex flex-col space-y-3">
+            <a href="/" class="nav-link text-gray-700 font-medium py-2">Home</a>
+            <a href="/doctors" class="nav-link text-gray-700 font-medium py-2">Doctors</a>
+            <a href="/pharmacy" class="nav-link text-gray-700 font-medium py-2">Pharmacy</a>
+            <a href="/services" class="nav-link text-gray-700 font-medium py-2">Services</a>
+            <a href="/about" class="nav-link text-gray-700 font-medium">About Us</a>
+            <a href="/contact" class="nav-link text-gray-700 font-medium">Contact</a>
+            <div class="pt-4 border-t border-gray-200">
+                <a href="/login" class="login-btn w-full block text-center text-white px-5 py-2 rounded-full">Login</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="min-h-screen flex items-center justify-center pt-28 pb-16 hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
+            <div class="p-8 md:p-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h2>
+                <p class="text-gray-600 mb-8">Join HealthFirst to manage your healthcare with ease.</p>
+
+                <form th:action="@{/register}" th:object="${patient}" method="post" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="firstName" class="block text-gray-700 font-medium mb-2">First Name</label>
+                            <input type="text" id="firstName" th:field="*{firstName}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-gray-700 font-medium mb-2">Last Name</label>
+                            <input type="text" id="lastName" th:field="*{lastName}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
+                            <input type="text" id="username" th:field="*{username}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                        </div>
+                        <div>
+                            <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                            <div class="relative">
+                                <input type="password" id="password" th:field="*{password}" class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-blue-600 focus:outline-none">
+                                    <i class="fas fa-eye" id="eyeIcon"></i>
+                                </button>
+                            </div>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
+                            <input type="email" id="email" th:field="*{email}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                        </div>
+                        <div>
+                            <label for="phoneNumber" class="block text-gray-700 font-medium mb-2">Phone Number</label>
+                            <input type="tel" id="phoneNumber" th:field="*{phoneNumber}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="address" class="block text-gray-700 font-medium mb-2">Address</label>
+                        <textarea id="address" th:field="*{address}" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 border-t border-gray-200 pt-6">
+                        <div>
+                            <label for="dateOfBirth" class="block text-gray-700 font-medium mb-2">Date of Birth</label>
+                            <input type="date" id="dateOfBirth" name="dateOfBirth" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('dateOfBirth')}" th:errors="*{dateOfBirth}"></div>
+                        </div>
+                        <div>
+                            <label for="gender" class="block text-gray-700 font-medium mb-2">Gender</label>
+                            <select id="gender" th:field="*{gender}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <div class="text-red-500 text-sm mt-1" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+                        </div>
+                        <div>
+                            <label for="bloodGroup" class="block text-gray-700 font-medium mb-2">Blood Group</label>
+                            <select id="bloodGroup" th:field="*{bloodGroup}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select...</option>
+                                <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="emergencyContactName" class="block text-gray-700 font-medium mb-2">Emergency Contact Name</label>
+                            <input type="text" id="emergencyContactName" th:field="*{emergencyContactName}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="emergencyContactNumber" class="block text-gray-700 font-medium mb-2">Emergency Contact Number</label>
+                            <input type="tel" id="emergencyContactNumber" th:field="*{emergencyContactNumber}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="allergies" class="block text-gray-700 font-medium mb-2">Allergies (if any)</label>
+                        <input type="text" id="allergies" th:field="*{allergies}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="medicalHistory" class="block text-gray-700 font-medium mb-2">Medical History (Optional)</label>
+                        <textarea id="medicalHistory" th:field="*{medicalHistory}" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-200">
+                        <button type="submit" class="login-btn w-full text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 active:scale-95">
+                            <i class="fas fa-user-plus mr-2"></i>Create Account
+                        </button>
+                    </div>
+
+                    <div class="text-center text-gray-600">
+                        Already have an account?
+                        <a class="font-bold text-blue-600 hover:underline" href="/login">
+                            Login here
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-10">
+            <div>
+                <a href="/" class="logo mb-4 inline-block">
+                    <i class="fas fa-heartbeat text-2xl text-blue-400"></i>
+                    <span class="text-2xl font-extrabold text-white ml-2">Health<span class="text-blue-400">First</span></span>
+                </a>
+                <p class="text-gray-400 mb-4">Your health is our top priority.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white">About Us</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Our Services</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Find a Doctor</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Our Services</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white">Primary Care</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Emergency Services</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Pharmacy Services</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Contact Us</h3>
+                <ul class="space-y-3 text-gray-400">
+                    <li class="flex items-start"><i class="fas fa-map-marker-alt mt-1 mr-3 text-blue-400"></i><span>123 Healthcare Ave, NY</span></li>
+                    <li class="flex items-start"><i class="fas fa-phone mt-1 mr-3 text-blue-400"></i><span>+1 (212) 555-0123</span></li>
+                    <li class="flex items-start"><i class="fas fa-envelope mt-1 mr-3 text-blue-400"></i><span>info@healthfirst.com</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        // --- Navbar Scroll Effect ---
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md', 'bg-white');
+                navbar.classList.remove('bg-white/90');
+            } else {
+                navbar.classList.remove('shadow-md', 'bg-white');
+                navbar.classList.add('bg-white/90');
+            }
+        });
+
+        // --- Password Visibility Toggle ---
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                eyeIcon.classList.toggle('fa-eye');
+                eyeIcon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // --- Mobile Menu Toggle ---
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

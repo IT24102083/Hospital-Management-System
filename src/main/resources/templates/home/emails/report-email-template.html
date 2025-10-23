@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your HealthFirst Report</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #2563eb;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+            line-height: 1.6;
+            color: #333333;
+        }
+        .footer {
+            background-color: #f4f7f6;
+            color: #888888;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f7f6;">
+    <tr>
+        <td align="center" style="padding: 20px;">
+            <table class="container" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td class="header">
+                        <h1>Your Report is Ready</h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="content">
+                        <p>Dear User,</p>
+                        <p>Please find the requested report, generated on <strong th:text="${reportDate}">October 13, 2025</strong>, attached to this email.</p>
+                        <p>This document contains the latest data from the HealthFirst system.</p>
+                        <br>
+                        <p>Thank you,</p>
+                        <p><strong>The HealthFirst System</strong></p>
+                    </td>
+                </tr>
+            </table>
+            <table class="container" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td class="footer">
+                        <p>&copy; 2025 HealthFirst Hospital. All rights reserved.</p>
+                        <p>This is an automated message. Please do not reply to this email.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

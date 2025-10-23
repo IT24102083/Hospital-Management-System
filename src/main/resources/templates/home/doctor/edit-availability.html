@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Availability - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2563eb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after, .nav-link.active:after {
+            width: 100%;
+        }
+
+        /* Navbar blur effect */
+        .navbar-blur {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hero gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-gray-50 hero-gradient min-h-screen">
+
+<header id="navbar" class="navbar-blur sticky top-0 z-50">
+    <nav class="container mx-auto px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center text-decoration-none">
+                <i class="fas fa-heartbeat text-3xl text-blue-600 mr-2"></i>
+                <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a class="nav-link text-gray-700 font-medium" href="/dashboard">Dashboard</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/appointments">Appointments</a>
+                <a class="nav-link text-gray-700 font-medium" href="/doctor/patients">My Patients</a>
+                <a class="nav-link active text-gray-700 font-medium" href="/doctor/availability">My Availability</a>
+            </div>
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                    <span class="font-medium" th:text="${'Dr. ' + doctor.firstName + ' ' + doctor.lastName}">Dr. John Smith</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" style="display: none;">
+                    <a href="/doctor/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="py-10">
+    <div class="container mx-auto px-4">
+        <div class="max-w-xl mx-auto">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Edit Availability Slot</h2>
+                    <p class="text-gray-600 mt-1">Update the details for your availability on <span class="font-semibold" th:text="${#temporals.format(availability.availableDate, 'dd MMMM yyyy')}"></span>.</p>
+                </div>
+                <form th:action="@{/doctor/availability/update}" th:object="${availability}" method="post" class="space-y-4">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div>
+                        <label for="availableDate" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" id="availableDate" th:field="*{availableDate}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="startTime" class="block text-sm font-medium text-gray-700">Start Time</label>
+                            <input type="time" id="startTime" th:field="*{startTime}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                        </div>
+                        <div>
+                            <label for="endTime" class="block text-sm font-medium text-gray-700">End Time</label>
+                            <input type="time" id="endTime" th:field="*{endTime}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="maxAppointments" class="block text-sm font-medium text-gray-700">Max Appointments</label>
+                        <input type="number" id="maxAppointments" th:field="*{maxAppointments}" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                    </div>
+                    <div class="flex items-center justify-end space-x-3 pt-2">
+                        <a href="/doctor/availability" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">Cancel</a>
+                        <button type="submit" class="bg-blue-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none">
+                            <i class="fas fa-save mr-2"></i>Update Availability
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-800 text-gray-400 py-6 mt-12">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <p class="mb-0">&copy; 2025 HealthFirst Hospital Management System. All rights reserved.</p>
+            <p class="text-xs mt-1">Current User: <span class="font-semibold text-gray-300">IT24102083</span> | Date: <span class="font-semibold text-gray-300">2025-08-09 18:13:38</span></p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Navbar scroll blur effect
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('navbar');
+
+        function updateNavbar() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('navbar-blur');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.add('navbar-blur');
+            }
+        }
+
+        updateNavbar();
+        window.addEventListener('scroll', updateNavbar);
+    });
+</script>
+
+</body>
+</html>

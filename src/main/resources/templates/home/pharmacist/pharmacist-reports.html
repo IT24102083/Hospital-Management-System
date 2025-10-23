@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pharmacy Reports - HealthFirst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+    <style>
+        body { background-color: #d3eaf2; font-family: "Public Sans", "Noto Sans", sans-serif; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-[#d3eaf2]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+    <nav class="sticky top-0 z-50 w-full bg-[#d3eaf2]/80 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a th:href="@{/pharmacist/dashboard}" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <a th:href="@{/pharmacist/dashboard}" class="bg-white text-gray-800 border border-gray-300 px-5 py-2 rounded-full font-medium hover:bg-gray-50 transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <main class="flex-1 p-4 md:p-6">
+        <div class="rounded-2xl bg-white/80 p-6 md:p-8 shadow-lg backdrop-blur-lg max-w-2xl mx-auto">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800 mb-6 border-b pb-4">Generate Pharmacy Reports</h1>
+
+            <div id="success-alert" th:if="${successMessage}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 transition-opacity duration-1000 ease-out" role="alert">
+                <p class="font-bold">Success</p>
+                <p th:text="${successMessage}"></p>
+            </div>
+            <div th:if="${errorMessage}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                <p class="font-bold">Error</p>
+                <p th:text="${errorMessage}"></p>
+            </div>
+
+            <form th:action="@{/pharmacist/reports/generate}" method="post" id="reportForm">
+                <div class="space-y-6">
+                    <div>
+                        <label for="reportType" class="block text-sm font-medium text-gray-700 mb-2">Select Report Type</label>
+                        <select id="reportType" name="reportType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="inventory">Inventory Status Report</option>
+                        </select>
+                    </div>
+
+                    <input type="hidden" name="action" id="actionInput">
+
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <button type="submit" onclick="setAction('download')" class="flex-1 inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-download mr-3"></i>
+                            Download PDF
+                        </button>
+                        <button type="submit" onclick="setAction('email')" class="flex-1 inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-envelope mr-3"></i>
+                            Send to My Email
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+    function setAction(action) {
+        document.getElementById('actionInput').value = action;
+    }
+
+    // ADDED: Logic to automatically hide the success alert
+    document.addEventListener('DOMContentLoaded', function() {
+        const successAlert = document.getElementById('success-alert');
+
+        // Check if the alert element exists on the page
+        if (successAlert) {
+            // Wait 5 seconds before starting the fade out
+            setTimeout(() => {
+                successAlert.style.opacity = '0';
+
+                // After the 1-second fade out transition is complete, remove the element
+                setTimeout(() => {
+                    successAlert.remove();
+                }, 1000); // This should match the duration in the CSS class (duration-1000)
+
+            }, 5000); // 5-second delay
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .header { background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .content { padding: 20px; }
+        .details-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .details-table td { padding: 8px; border: 1px solid #eee; }
+        .details-table .label { font-weight: bold; width: 30%; background-color: #f9f9f9; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Appointment Confirmed!</h1>
+    </div>
+    <div class="content">
+        <p>Dear <strong th:text="${patientName}">Patient</strong>,</p>
+        <p>This email confirms that your appointment has been successfully booked with HealthFirst Hospital. Please find the details below:</p>
+
+        <table class="details-table">
+            <tr>
+                <td class="label">Doctor</td>
+                <td th:text="${doctorName}">Dr. John Smith</td>
+            </tr>
+            <tr>
+                <td class="label">Date</td>
+                <td th:text="${appointmentDate}">October 05, 2025</td>
+            </tr>
+            <tr>
+                <td class="label">Time</td>
+                <td th:text="${appointmentTime}">10:30 AM</td>
+            </tr>
+            <tr>
+                <td class="label">Reason for Visit</td>
+                <td th:text="${reason}">General Checkup</td>
+            </tr>
+        </table>
+
+        <p>If you need to cancel or reschedule, please contact us at your earliest convenience. We look forward to seeing you.</p>
+        <p>Sincerely,<br>The HealthFirst Hospital Team</p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2025 HealthFirst Hospital. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

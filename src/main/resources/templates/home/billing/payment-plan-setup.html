@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Payment Plan - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .plan-option { border: 2px solid #e5e7eb; transition: all 0.3s ease; cursor: pointer; }
+        .plan-option:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .plan-option.selected { border-color: #3b82f6; background-color: #eff6ff; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+        .payment-day { background-color: #dbeafe; color: #1e40af; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/patient/invoices" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Invoices
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
+                    <h1 class="text-3xl font-bold">Setup Payment Plan</h1>
+                    <p class="text-purple-100 mt-2">Create a manageable payment schedule for your medical expenses</p>
+                </div>
+                
+                <!-- Invoice Summary -->
+                <div class="p-6 border-b bg-blue-50">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <p class="text-gray-600 text-sm">Invoice Number</p>
+                            <p class="font-semibold" th:text="${invoice.invoiceNumber}">INV-2024-001</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Total Amount</p>
+                            <p class="font-semibold text-blue-600">$<span th:text="${#numbers.formatDecimal(invoice.total, 1, 2)}">1,500.00</span></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Outstanding</p>
+                            <p class="font-semibold text-red-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">1,500.00</span></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Service Date</p>
+                            <p class="font-semibold" th:text="${#temporals.format(invoice.serviceDate, 'MMM dd, yyyy')}">Jan 15, 2024</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <form id="paymentPlanForm" th:action="@{/patient/invoices/{id}/setup-payment-plan(id=${invoice.id})}" method="post">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Left Column - Plan Options -->
+                            <div class="space-y-6">
+                                <!-- Pre-defined Plans -->
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Choose Payment Plan</h3>
+                                    
+                                    <div class="space-y-4">
+                                        <!-- 3 Month Plan -->
+                                        <div class="plan-option rounded-lg p-6" data-plan="3" data-monthly="500">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">3 Month Plan</h4>
+                                                    <p class="text-gray-600">Pay over 3 monthly installments</p>
+                                                    <p class="text-sm text-gray-500 mt-1">Interest: 0%</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-2xl font-bold text-purple-600">$500.00</p>
+                                                    <p class="text-sm text-gray-600">per month</p>
+                                                    <input type="radio" name="planType" value="3" class="mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 6 Month Plan -->
+                                        <div class="plan-option rounded-lg p-6" data-plan="6" data-monthly="250">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">6 Month Plan</h4>
+                                                    <p class="text-gray-600">Pay over 6 monthly installments</p>
+                                                    <p class="text-sm text-gray-500 mt-1">Interest: 2% total</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-2xl font-bold text-purple-600">$255.00</p>
+                                                    <p class="text-sm text-gray-600">per month</p>
+                                                    <input type="radio" name="planType" value="6" class="mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 12 Month Plan -->
+                                        <div class="plan-option rounded-lg p-6" data-plan="12" data-monthly="135">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">12 Month Plan</h4>
+                                                    <p class="text-gray-600">Pay over 12 monthly installments</p>
+                                                    <p class="text-sm text-gray-500 mt-1">Interest: 5% total</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-2xl font-bold text-purple-600">$131.25</p>
+                                                    <p class="text-sm text-gray-600">per month</p>
+                                                    <input type="radio" name="planType" value="12" class="mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Custom Plan -->
+                                        <div class="plan-option rounded-lg p-6" data-plan="custom">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <h4 class="font-semibold text-lg text-gray-900">Custom Plan</h4>
+                                                    <p class="text-gray-600">Create your own payment schedule</p>
+                                                    <p class="text-sm text-gray-500 mt-1">Flexible terms</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-2xl font-bold text-purple-600">Custom</p>
+                                                    <p class="text-sm text-gray-600">your choice</p>
+                                                    <input type="radio" name="planType" value="custom" class="mt-2">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Custom Plan Options -->
+                                <div id="customPlanOptions" class="hidden bg-gray-50 rounded-lg p-6">
+                                    <h4 class="font-semibold text-gray-900 mb-4">Custom Plan Details</h4>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Number of Payments</label>
+                                            <select id="customMonths" name="customMonths" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                <option value="">Select...</option>
+                                                <option value="2">2 months</option>
+                                                <option value="3">3 months</option>
+                                                <option value="4">4 months</option>
+                                                <option value="5">5 months</option>
+                                                <option value="6">6 months</option>
+                                                <option value="9">9 months</option>
+                                                <option value="12">12 months</option>
+                                                <option value="18">18 months</option>
+                                                <option value="24">24 months</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-gray-700 font-medium mb-2">Monthly Amount</label>
+                                            <div class="relative">
+                                                <span class="absolute left-3 top-3 text-gray-500">$</span>
+                                                <input type="number" id="customMonthlyAmount" name="customMonthlyAmount" class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="0.00" step="0.01" min="50">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <label class="block text-gray-700 font-medium mb-2">First Payment Date</label>
+                                        <input type="date" id="firstPaymentDate" name="firstPaymentDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+
+                                <!-- Payment Method -->
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Method for Installments</h3>
+                                    
+                                    <div class="space-y-3">
+                                        <label class="flex items-center p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                            <input type="radio" name="paymentMethod" value="auto_card" class="mr-4" checked>
+                                            <div class="flex-1">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-credit-card text-blue-600 mr-3"></i>
+                                                    <div>
+                                                        <h4 class="font-medium text-gray-900">Auto-Pay with Card</h4>
+                                                        <p class="text-sm text-gray-600">Automatically charge your card each month</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                        
+                                        <label class="flex items-center p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                            <input type="radio" name="paymentMethod" value="manual" class="mr-4">
+                                            <div class="flex-1">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-bell text-orange-600 mr-3"></i>
+                                                    <div>
+                                                        <h4 class="font-medium text-gray-900">Manual Payments</h4>
+                                                        <p class="text-sm text-gray-600">We'll send reminders, you pay manually</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column - Plan Summary -->
+                            <div class="space-y-6">
+                                <!-- Plan Summary -->
+                                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Plan Summary</h3>
+                                    
+                                    <div class="space-y-3 mb-6">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Original Amount:</span>
+                                            <span class="font-medium">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">1,500.00</span></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Interest/Fees:</span>
+                                            <span id="interestAmount" class="font-medium">$0.00</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Plan Duration:</span>
+                                            <span id="planDuration" class="font-medium">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Monthly Payment:</span>
+                                            <span id="monthlyPayment" class="font-medium text-purple-600">-</span>
+                                        </div>
+                                        <div class="border-t pt-3">
+                                            <div class="flex justify-between text-lg font-bold">
+                                                <span>Total to Pay:</span>
+                                                <span id="totalToPay" class="text-purple-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">1,500.00</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Payment Schedule Preview -->
+                                    <div id="paymentSchedule" class="hidden">
+                                        <h4 class="font-medium text-gray-900 mb-3">Payment Schedule</h4>
+                                        <div class="max-h-40 overflow-y-auto">
+                                            <div id="scheduleList" class="space-y-2">
+                                                <!-- Schedule items will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="mt-6 space-y-3">
+                                        <button type="submit" id="setupPlanBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                            <i class="fas fa-calendar-check mr-2"></i> Setup Payment Plan
+                                        </button>
+                                        
+                                        <button type="button" onclick="history.back()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg">
+                                            <i class="fas fa-times mr-2"></i> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Benefits Section -->
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                                    <h3 class="text-lg font-semibold text-green-900 mb-4">
+                                        <i class="fas fa-check-circle mr-2"></i>Payment Plan Benefits
+                                    </h3>
+                                    <ul class="space-y-2 text-sm text-green-800">
+                                        <li class="flex items-start">
+                                            <i class="fas fa-chevron-right text-green-600 mr-2 mt-1"></i>
+                                            <span>No credit check required</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-chevron-right text-green-600 mr-2 mt-1"></i>
+                                            <span>Flexible payment dates</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-chevron-right text-green-600 mr-2 mt-1"></i>
+                                            <span>Automatic payment reminders</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-chevron-right text-green-600 mr-2 mt-1"></i>
+                                            <span>Early payoff option available</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-chevron-right text-green-600 mr-2 mt-1"></i>
+                                            <span>24/7 online account management</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const originalAmount = 1500.00; // This would come from the invoice
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Plan option selection
+        const planOptions = document.querySelectorAll('.plan-option');
+        const customPlanOptions = document.getElementById('customPlanOptions');
+        const setupPlanBtn = document.getElementById('setupPlanBtn');
+
+        planOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                const planType = this.getAttribute('data-plan');
+                
+                // Remove selected class from all options
+                planOptions.forEach(o => o.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Check the radio button
+                radio.checked = true;
+                
+                // Show/hide custom options
+                if (planType === 'custom') {
+                    customPlanOptions.classList.remove('hidden');
+                } else {
+                    customPlanOptions.classList.add('hidden');
+                }
+                
+                // Update summary
+                updatePlanSummary(planType);
+                
+                // Enable submit button
+                setupPlanBtn.disabled = false;
+            });
+        });
+
+        // Custom plan inputs
+        document.getElementById('customMonths').addEventListener('change', function() {
+            if (this.value) {
+                calculateCustomPlan();
+            }
+        });
+
+        document.getElementById('customMonthlyAmount').addEventListener('input', function() {
+            calculateCustomPlan();
+        });
+
+        // Set default first payment date to next month
+        const nextMonth = new Date();
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        nextMonth.setDate(1);
+        document.getElementById('firstPaymentDate').value = nextMonth.toISOString().split('T')[0];
+    });
+
+    function updatePlanSummary(planType) {
+        let months, monthlyAmount, interest = 0;
+        
+        switch(planType) {
+            case '3':
+                months = 3;
+                monthlyAmount = originalAmount / 3;
+                interest = 0;
+                break;
+            case '6':
+                months = 6;
+                interest = originalAmount * 0.02;
+                monthlyAmount = (originalAmount + interest) / 6;
+                break;
+            case '12':
+                months = 12;
+                interest = originalAmount * 0.05;
+                monthlyAmount = (originalAmount + interest) / 12;
+                break;
+            case 'custom':
+                return; // Handled separately
+        }
+        
+        const total = originalAmount + interest;
+        
+        document.getElementById('planDuration').textContent = `${months} months`;
+        document.getElementById('monthlyPayment').textContent = `$${monthlyAmount.toFixed(2)}`;
+        document.getElementById('interestAmount').textContent = `$${interest.toFixed(2)}`;
+        document.getElementById('totalToPay').textContent = `$${total.toFixed(2)}`;
+        
+        generatePaymentSchedule(months, monthlyAmount);
+    }
+
+    function calculateCustomPlan() {
+        const months = document.getElementById('customMonths').value;
+        const monthlyAmount = parseFloat(document.getElementById('customMonthlyAmount').value);
+        
+        if (!months || !monthlyAmount) return;
+        
+        const total = monthlyAmount * months;
+        const interest = total - originalAmount;
+        
+        document.getElementById('planDuration').textContent = `${months} months`;
+        document.getElementById('monthlyPayment').textContent = `$${monthlyAmount.toFixed(2)}`;
+        document.getElementById('interestAmount').textContent = `$${Math.max(0, interest).toFixed(2)}`;
+        document.getElementById('totalToPay').textContent = `$${total.toFixed(2)}`;
+        
+        generatePaymentSchedule(parseInt(months), monthlyAmount);
+    }
+
+    function generatePaymentSchedule(months, monthlyAmount) {
+        const scheduleDiv = document.getElementById('paymentSchedule');
+        const scheduleList = document.getElementById('scheduleList');
+        
+        let scheduleHTML = '';
+        const startDate = new Date(document.getElementById('firstPaymentDate').value || new Date());
+        
+        for (let i = 0; i < months; i++) {
+            const paymentDate = new Date(startDate);
+            paymentDate.setMonth(paymentDate.getMonth() + i);
+            
+            const isLastPayment = i === months - 1;
+            const amount = isLastPayment ? monthlyAmount : monthlyAmount; // Could adjust last payment for rounding
+            
+            scheduleHTML += `
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
+                    <span>Payment ${i + 1}</span>
+                    <span>${paymentDate.toLocaleDateString()}</span>
+                    <span class="font-medium">$${amount.toFixed(2)}</span>
+                </div>
+            `;
+        }
+        
+        scheduleList.innerHTML = scheduleHTML;
+        scheduleDiv.classList.remove('hidden');
+    }
+</script>
+</body>
+</html>

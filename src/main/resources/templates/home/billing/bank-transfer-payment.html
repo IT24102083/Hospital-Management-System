@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Transfer - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+
+        .bank-card {
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .bank-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .bank-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center text-green-600">
+                <i class="fas fa-university mr-2"></i>
+                <span class="text-sm font-medium">Bank Transfer</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
+                    <h1 class="text-3xl font-bold">Bank Transfer Payment</h1>
+                    <p class="text-green-100 mt-2">Transfer funds directly from your bank account</p>
+                </div>
+
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900">Payment Details</h2>
+                            <p class="text-gray-600">Invoice: <span class="font-medium" th:text="${invoice.invoiceNumber}">INV-2024-001</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-600">Amount to Transfer:</p>
+                            <p class="text-3xl font-bold text-green-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">200.00</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Transfer to HealthFirst Account</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h3 class="font-semibold text-blue-900 mb-4">Account Information</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Bank Name:</span>
+                                    <div class="flex items-center">
+                                        <span class="font-medium">HealthFirst Bank</span>
+                                        <button onclick="copyToClipboard('HealthFirst Bank')" class="copy-btn ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Account Name:</span>
+                                    <div class="flex items-center">
+                                        <span class="font-medium">HealthFirst Medical Center</span>
+                                        <button onclick="copyToClipboard('HealthFirst Medical Center')" class="copy-btn ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Account Number:</span>
+                                    <div class="flex items-center">
+                                        <span class="font-medium">1234567890</span>
+                                        <button onclick="copyToClipboard('1234567890')" class="copy-btn ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Routing Number:</span>
+                                    <div class="flex items-center">
+                                        <span class="font-medium">021000021</span>
+                                        <button onclick="copyToClipboard('021000021')" class="copy-btn ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Reference:</span>
+                                    <div class="flex items-center">
+                                        <span class="font-medium" th:text="${invoice.invoiceNumber}">INV-2024-001</span>
+                                        <button th:onclick="|copyToClipboard(invoiceNumber)|" class="copy-btn ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <h3 class="font-semibold text-gray-900 mb-4">Mobile Banking QR</h3>
+                            <div class="bg-white p-4 rounded-lg inline-block">
+                                <div class="w-32 h-32 bg-gray-200 rounded flex items-center justify-center">
+                                    <img th:if="${qrCodeImage}" th:src="@{'data:image/png;base64,' + ${qrCodeImage}}" alt="QR Code" class="w-32 h-32"/>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-3">Scan with your mobile banking app</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+                        <h3 class="font-semibold text-yellow-900 mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>Transfer Instructions
+                        </h3>
+                        <ol class="list-decimal list-inside space-y-2 text-yellow-800">
+                            <li>Log in to your online banking or visit your bank branch</li>
+                            <li>Set up a new payee using the account details above</li>
+                            <li>Enter the exact amount: <strong>$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">200.00</span></strong></li>
+                            <li>Use the reference number: <strong th:text="${invoice.invoiceNumber}">INV-2024-001</strong></li>
+                            <li>Complete the transfer and upload your receipt below</li>
+                        </ol>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Upload Transfer Receipt</h3>
+                        <form id="receiptUploadForm" th:action="@{/patient/invoices/{id}/pay/bank-transfer(id=${invoice.id})}" method="POST" enctype="multipart/form-data">
+
+                            <input type="hidden" name="amount" th:value="${invoice.balanceDue}" />
+                            <input type="hidden" name="referenceNumber" th:value="${invoice.invoiceNumber}" />
+
+                            <div class="mb-6">
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                                    <div id="dropZone" class="cursor-pointer">
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                        <p class="text-gray-600 mb-2">Drag and drop your receipt here, or click to browse</p>
+                                        <p class="text-sm text-gray-500">Supported formats: PDF, JPG, PNG (Max 5MB)</p>
+                                        <input type="file" id="receiptFile" name="receiptFile" accept=".pdf,.jpg,.jpeg,.png" class="hidden" required>
+                                    </div>
+                                </div>
+                                <div id="uploadPreview" class="mt-4 hidden">
+                                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file text-blue-600 mr-3"></i>
+                                            <span id="fileName" class="text-sm font-medium"></span>
+                                        </div>
+                                        <button type="button" onclick="removeFile()" class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Additional Notes (Optional)</label>
+                                <textarea id="transferNotes" name="transferNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any additional information about your transfer..."></textarea>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <button type="button" onclick="history.back()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">
+                                    <i class="fas fa-arrow-left mr-2"></i> Back
+                                </button>
+                                <button type="submit" id="submitBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fas fa-upload mr-2"></i> Submit Receipt
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const invoiceNumber = /*[[${invoice.invoiceNumber}]]*/ 'INV-000';
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('receiptFile');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById('receiptUploadForm');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files; // Assign dropped files to the input
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload a PDF, JPG, or PNG file.');
+                removeFile();
+                return;
+            }
+
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB.');
+                removeFile();
+                return;
+            }
+
+            fileName.textContent = file.name;
+            uploadPreview.classList.remove('hidden');
+            submitBtn.disabled = false;
+        }
+
+        // FIX 3: Corrected the JavaScript form submission logic
+        form.addEventListener('submit', function(e) {
+            if (!fileInput.files[0]) {
+                alert('Please upload your transfer receipt.');
+                e.preventDefault(); // Prevent submission if no file is selected
+                return;
+            }
+
+            // If a file is selected, show processing state and allow the form to submit
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading Receipt...';
+            submitBtn.disabled = true;
+
+            // The setTimeout and manual redirect are removed to allow a proper form submission
+        });
+    });
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const button = event.target.closest('button');
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+            }, 1000);
+        }).catch(() => {
+            alert('Failed to copy to clipboard. Please copy manually.');
+        });
+    }
+
+    function removeFile() {
+        document.getElementById('receiptFile').value = '';
+        document.getElementById('uploadPreview').classList.add('hidden');
+        document.getElementById('submitBtn').disabled = true;
+    }
+</script>
+</body>
+</html>

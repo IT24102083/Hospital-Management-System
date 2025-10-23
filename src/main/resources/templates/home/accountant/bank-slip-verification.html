@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Bank Slip - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .verification-action { border: 2px solid #e5e7eb; transition: all 0.3s ease; cursor: pointer; }
+        .verification-action:hover { border-color: #3b82f6; }
+        .verification-action.selected { border-color: #3b82f6; background-color: #eff6ff; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/accountant/dashboard" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/accountant/bank-slips" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Bank Slips
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
+                    <h1 class="text-3xl font-bold">Bank Slip Verification</h1>
+                    <p class="text-green-100 mt-2">Review and verify bank transfer receipt</p>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- LEFT COLUMN: Bank Slip Viewer -->
+                        <div class="space-y-6">
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Uploaded Bank Slip</h3>
+
+                                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="relative" style="min-height: 500px;">
+                                        <!-- Try object tag first (better PDF support) -->
+                                        <object th:data="@{/accountant/bank-slips/{id}/view(id=${payment.id})}"
+                                                type="application/pdf"
+                                                width="100%"
+                                                height="500px"
+                                                style="border: none;">
+
+                                            <!-- Fallback if object doesn't work -->
+                                            <div class="flex flex-col items-center justify-center h-full p-8 bg-gray-50">
+                                                <i class="fas fa-file-pdf text-gray-400 text-6xl mb-4"></i>
+                                                <p class="text-gray-600 mb-4">Unable to display PDF inline</p>
+                                                <div class="space-x-4">
+                                                    <a th:href="@{/accountant/bank-slips/{id}/view(id=${payment.id})}"
+                                                       target="_blank"
+                                                       class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                                                        <i class="fas fa-external-link-alt mr-2"></i> Open in New Tab
+                                                    </a>
+                                                    <a th:href="@{/accountant/bank-slips/{id}/download(id=${payment.id})}"
+                                                       class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
+                                                        <i class="fas fa-download mr-2"></i> Download PDF
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </object>
+
+                                        <div class="absolute top-2 right-2 z-10">
+                                            <a th:href="@{/accountant/bank-slips/{id}/view(id=${payment.id})}"
+                                               target="_blank"
+                                               title="Open in new tab"
+                                               class="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 p-2 rounded-full shadow-md inline-block">
+                                                <i class="fas fa-expand-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 border-t bg-gray-50">
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="text-gray-600">Uploaded: <span th:text="${#temporals.format(payment.paymentDate, 'MMM dd, yyyy HH:mm')}">Jan 15, 2024 14:30</span></span>
+                                            <a th:href="@{/accountant/bank-slips/{id}/download(id=${payment.id})}"
+                                               class="text-blue-600 hover:text-blue-800 font-medium">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: Invoice Info & Verification Form -->
+                        <div class="space-y-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-blue-900 mb-4">Invoice Information</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-700">Invoice Number:</span>
+                                        <span class="font-medium" th:text="${invoice.invoiceNumber}">INV-2024-145</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-700">Patient:</span>
+                                        <span class="font-medium" th:text="${invoice.patient.firstName + ' ' + invoice.patient.lastName}">John Doe</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-700">Invoice Amount:</span>
+                                        <span class="font-medium text-blue-600">$<span th:text="${#numbers.formatDecimal(invoice.total, 1, 2)}">350.00</span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-700">Outstanding:</span>
+                                        <span class="font-medium text-red-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">350.00</span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-700">Due Date:</span>
+                                        <span class="font-medium" th:text="${#temporals.format(invoice.dueDate, 'MMM dd, yyyy')}">Feb 15, 2024</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Verification Decision</h3>
+
+                                <form id="verificationForm" th:action="@{/accountant/bank-slips/{id}/verify(id=${payment.id})}" method="post">
+                                    <div class="space-y-4 mb-6">
+                                        <div class="verification-action rounded-lg p-4" data-action="approve">
+                                            <div class="flex items-center">
+                                                <input type="radio" name="verificationAction" value="approve" id="approve" class="w-5 h-5 text-green-600">
+                                                <label for="approve" class="ml-3 flex-1 cursor-pointer">
+                                                    <div class="flex justify-between items-center">
+                                                        <div>
+                                                            <h4 class="font-medium text-green-800">Approve Payment</h4>
+                                                            <p class="text-sm text-gray-600">Confirm transfer is valid and complete</p>
+                                                        </div>
+                                                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="verification-action rounded-lg p-4" data-action="reject">
+                                            <div class="flex items-center">
+                                                <input type="radio" name="verificationAction" value="reject" id="reject" class="w-5 h-5 text-red-600">
+                                                <label for="reject" class="ml-3 flex-1 cursor-pointer">
+                                                    <div class="flex justify-between items-center">
+                                                        <div>
+                                                            <h4 class="font-medium text-red-800">Reject Payment</h4>
+                                                            <p class="text-sm text-gray-600">Transfer is invalid or incomplete</p>
+                                                        </div>
+                                                        <i class="fas fa-times-circle text-red-600 text-2xl"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="verification-action rounded-lg p-4" data-action="partial">
+                                            <div class="flex items-center">
+                                                <input type="radio" name="verificationAction" value="partial" id="partial" class="w-5 h-5 text-yellow-600">
+                                                <label for="partial" class="ml-3 flex-1 cursor-pointer">
+                                                    <div class="flex justify-between items-center">
+                                                        <div>
+                                                            <h4 class="font-medium text-yellow-800">Partial Payment</h4>
+                                                            <p class="text-sm text-gray-600">Accept different amount than expected</p>
+                                                        </div>
+                                                        <i class="fas fa-exclamation-circle text-yellow-600 text-2xl"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            <div id="partialAmountSection" class="hidden mt-4 ml-8">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Verified Amount:</label>
+                                                <div class="flex items-center">
+                                                    <span class="text-gray-500 mr-2">$</span>
+                                                    <input type="number" name="verifiedAmount" class="w-32 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" step="0.01" min="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-6">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Verification Notes</label>
+                                        <textarea name="verificationNotes" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Add any notes about this verification..."></textarea>
+                                    </div>
+
+                                    <div class="flex justify-between">
+                                        <button type="button" onclick="history.back()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                            <i class="fas fa-check mr-2"></i> Submit Verification
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                                <div class="space-y-2">
+                                    <button onclick="contactPatient()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg text-left">
+                                        <i class="fas fa-phone mr-3 text-blue-600"></i> Contact Patient
+                                    </button>
+                                    <button th:onclick="|viewInvoiceDetails(${payment.invoice.id})|" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg text-left">
+                                        <i class="fas fa-file-invoice mr-3 text-green-600"></i> View Full Invoice
+                                    </button>
+                                    <button th:onclick="|downloadBankSlip(${payment.id})|" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg text-left">
+                                        <i class="fas fa-download mr-3 text-purple-600"></i> Download Bank Slip
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const verificationActions = document.querySelectorAll('.verification-action');
+        const partialAmountSection = document.getElementById('partialAmountSection');
+        const submitBtn = document.getElementById('submitBtn');
+        const verificationForm = document.getElementById('verificationForm');
+
+        verificationActions.forEach(action => {
+            action.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                verificationActions.forEach(a => a.classList.remove('selected'));
+                this.classList.add('selected');
+                radio.checked = true;
+                if (radio.value === 'partial') {
+                    partialAmountSection.classList.remove('hidden');
+                } else {
+                    partialAmountSection.classList.add('hidden');
+                }
+                submitBtn.disabled = false;
+            });
+        });
+
+        verificationForm.addEventListener('submit', function(e) {
+            const selectedAction = document.querySelector('input[name="verificationAction"]:checked');
+            if (!selectedAction) {
+                e.preventDefault();
+                alert('Please select a verification action');
+                return false;
+            }
+            if (selectedAction.value === 'partial') {
+                const verifiedAmount = parseFloat(document.querySelector('input[name="verifiedAmount"]').value);
+                if (!verifiedAmount || verifiedAmount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid verified amount');
+                    return false;
+                }
+            }
+            if (selectedAction.value === 'reject') {
+                const notes = document.querySelector('textarea[name="verificationNotes"]').value;
+                if (!notes || notes.trim() === '') {
+                    e.preventDefault();
+                    alert('Please provide a reason for rejection');
+                    return false;
+                }
+            }
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+            submitBtn.disabled = true;
+            return true;
+        });
+    });
+
+    function contactPatient() {
+        alert('Contact patient functionality');
+    }
+
+    function viewInvoiceDetails(invoiceId) {
+        window.open(`/accountant/invoices/${invoiceId}`, '_blank');
+    }
+
+    function downloadBankSlip(paymentId) {
+        window.open(`/accountant/bank-slips/${paymentId}/download`, '_blank');
+    }
+</script>
+</body>
+</html>

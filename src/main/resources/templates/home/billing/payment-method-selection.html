@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Method - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+
+        .payment-method-card {
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .payment-method-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .payment-method-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .payment-method-card.selected .method-icon {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/patient/invoices" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Invoices
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                    <h1 class="text-3xl font-bold">Payment Checkout</h1>
+                    <p class="text-blue-100 mt-2">Complete your payment securely</p>
+                </div>
+
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Invoice Summary</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <p class="text-gray-600">Invoice Number:</p>
+                            <p class="font-semibold" th:text="${invoice.invoiceNumber}">INV-2024-001</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-600">Amount Due:</p>
+                            <p class="text-2xl font-bold text-blue-600">$<span th:text="${#numbers.formatDecimal(invoice.balanceDue, 1, 2)}">200.00</span></p>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <p th:text="${invoice.description ?: 'Medical Services'}">General Consultation - Dr. Smith</p>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Select Payment Method</h2>
+
+                    <form id="paymentForm" th:action="@{/patient/invoices/{id}/process-payment(id=${invoice.id})}" method="post">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="payment-method-card rounded-lg p-6" data-method="card">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-credit-card method-icon text-3xl text-gray-400 mr-4"></i>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">Credit/Debit Card</h3>
+                                            <p class="text-sm text-gray-600">Pay with Visa, MasterCard, or American Express</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="paymentMethod" value="card" class="w-5 h-5 text-blue-600">
+                                </div>
+                            </div>
+
+                            <div class="payment-method-card rounded-lg p-6" data-method="bank">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-university method-icon text-3xl text-gray-400 mr-4"></i>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">Bank Transfer</h3>
+                                            <p class="text-sm text-gray-600">Direct transfer from your bank account</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="paymentMethod" value="bank" class="w-5 h-5 text-blue-600">
+                                </div>
+                            </div>
+
+                            <div class="payment-method-card rounded-lg p-6" data-method="paypal">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fab fa-paypal method-icon text-3xl text-gray-400 mr-4"></i>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">PayPal</h3>
+                                            <p class="text-sm text-gray-600">Pay securely with your PayPal account</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="paymentMethod" value="paypal" class="w-5 h-5 text-blue-600">
+                                </div>
+                            </div>
+
+                            <div class="payment-method-card rounded-lg p-6" data-method="mobile">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-mobile-alt method-icon text-3xl text-gray-400 mr-4"></i>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">Mobile Payment</h3>
+                                            <p class="text-sm text-gray-600">Apple Pay, Google Pay, Samsung Pay</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="paymentMethod" value="mobile" class="w-5 h-5 text-blue-600">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start">
+                                    <i class="fas fa-calendar-alt text-blue-600 text-2xl mr-4 mt-1"></i>
+                                    <div>
+                                        <h3 class="font-semibold text-blue-900">Payment Plan Available</h3>
+                                        <p class="text-blue-700 mt-1">Break down your payment into manageable monthly installments</p>
+                                        <p class="text-sm text-blue-600 mt-2">Starting from $<span th:text="${#numbers.formatDecimal(invoice.balanceDue / 3, 1, 2)}">66.67</span>/month over 3 months</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="setupPaymentPlan()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                                    Setup Plan
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+                            <div class="flex items-center">
+                                <i class="fas fa-shield-alt text-green-600 mr-3"></i>
+                                <div class="text-sm">
+                                    <p class="font-medium text-green-900">Secure Payment</p>
+                                    <p class="text-green-700">Your payment information is encrypted and secure. We never store your payment details.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <button type="button" onclick="history.back()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">
+                                <i class="fas fa-arrow-left mr-2"></i> Back
+                            </button>
+                            <button type="submit" id="continueBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Continue to Payment <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        // --- Payment Method Selection ---
+        const paymentCards = document.querySelectorAll('.payment-method-card');
+        const radioButtons = document.querySelectorAll('input[name="paymentMethod"]');
+        const continueBtn = document.getElementById('continueBtn');
+        const paymentForm = document.getElementById('paymentForm');
+
+        paymentCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const method = this.getAttribute('data-method');
+                const radio = this.querySelector('input[type="radio"]');
+
+                // Remove selected class from all cards
+                paymentCards.forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to clicked card
+                this.classList.add('selected');
+
+                // Check the radio button
+                radio.checked = true;
+
+                // Enable continue button
+                continueBtn.disabled = false;
+            });
+        });
+
+        // Form submission
+        paymentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (!selectedMethod) {
+                alert('Please select a payment method');
+                return;
+            }
+
+            // Show loading
+            continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+            continueBtn.disabled = true;
+
+            // Redirect based on payment method
+            const invoiceId = window.location.pathname.split('/')[3];
+            const method = selectedMethod.value;
+
+            setTimeout(() => {
+                switch(method) {
+                    case 'card':
+                        window.location.href = `/patient/invoices/${invoiceId}/pay/card`;
+                        break;
+                    case 'bank':
+                        // FIXED: Corrected path
+                        window.location.href = `/patient/invoices/${invoiceId}/pay/bank-transfer`;
+                        break;
+                    case 'paypal':
+                        // Placeholder for PayPal integration
+                        alert('PayPal is not yet implemented.');
+                        window.location.href = `/patient/invoices/${invoiceId}/pay/paypal`;
+                        break;
+                    case 'mobile':
+                        // Placeholder for Mobile Pay
+                        alert('Mobile Payment is not yet implemented.');
+                        window.location.href = `/patient/invoices/${invoiceId}/pay/mobile`;
+                        break;
+                    default:
+                        alert('Invalid payment method selected');
+                        continueBtn.innerHTML = 'Continue to Payment <i class="fas fa-arrow-right ml-2"></i>';
+                        continueBtn.disabled = false;
+                }
+            }, 1000);
+        });
+    });
+
+    function setupPaymentPlan() {
+        const invoiceId = window.location.pathname.split('/')[3];
+        window.location.href = `/patient/invoices/${invoiceId}/setup-payment-plan`;
+    }
+</script>
+</body>
+</html>

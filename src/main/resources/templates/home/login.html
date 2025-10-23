@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=100&id=xmyuMQZl4avP&format=png&color=000000">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover { color: #2563eb; }
+        .nav-link:hover:after { width: 100%; }
+        .login-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+
+        /* --- HIDE SCROLLBAR (UPDATED & MORE ROBUST) --- */
+        html, body {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none; /* For Chrome, Safari, and Opera */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+
+        <div class="hidden md:flex space-x-8">
+            <a href="/" class="nav-link text-gray-700 font-medium">Home</a>
+            <a href="/doctors" class="nav-link text-gray-700 font-medium">Doctors</a>
+            <a href="/pharmacy" class="nav-link text-gray-700 font-medium">Pharmacy</a>
+            <a href="/services" class="nav-link text-gray-700 font-medium">Services</a>
+            <a href="/about" class="nav-link text-gray-700 font-medium">About Us</a>
+            <a href="/contact" class="nav-link text-gray-700 font-medium">Contact</a>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <a href="/register" class="login-btn hidden sm:block text-white px-5 py-2 rounded-full">Register</a>
+            <div class="md:hidden">
+                <button id="mobileMenuBtn" class="text-gray-700 p-2 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="hidden md:hidden bg-white shadow-lg w-full absolute left-0 p-4 z-50">
+        <div class="flex flex-col space-y-3">
+            <a href="/" class="nav-link text-gray-700 font-medium py-2">Home</a>
+            <a href="/doctors" class="nav-link text-gray-700 font-medium py-2">Doctors</a>
+            <a href="/pharmacy" class="nav-link text-gray-700 font-medium py-2">Pharmacy</a>
+            <a href="/services" class="nav-link text-gray-700 font-medium py-2">Services</a>
+            <a href="/about" class="nav-link text-gray-700 font-medium py-2">About Us</a>
+            <a href="/contact" class="nav-link text-gray-700 font-medium py-2">Contact</a>
+            <div class="pt-4 border-t border-gray-200">
+                <a href="/register" class="login-btn w-full block text-center text-white px-5 py-2 rounded-full">Register</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="min-h-screen flex items-center justify-center pt-24 pb-16 hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto grid md:grid-cols-2 rounded-2xl shadow-2xl overflow-hidden bg-white animate-fade-in-up">
+            <div class="hidden md:block relative">
+                <img src="https://images.unsplash.com/photo-1538108149393-fbbd81895907?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Healthcare Professionals" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-blue-800 bg-opacity-60 flex flex-col justify-end p-8 text-white">
+                    <h2 class="text-3xl font-bold mb-2">Secure Patient Access</h2>
+                    <p class="text-blue-100">Your health information, protected and accessible whenever you need it.</p>
+                </div>
+            </div>
+
+            <div class="p-8 md:p-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                <p class="text-gray-600 mb-6">Login to your HealthFirst account.</p>
+
+                <div th:if="${param.error}" class="mb-4 bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <strong class="font-bold">Access Denied:</strong>
+                    <span class="block sm:inline"> Invalid username or password.</span>
+                </div>
+                <div th:if="${param.logout}" class="mb-4 bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <strong class="font-bold">Success:</strong>
+                    <span class="block sm:inline"> You've been logged out.</span>
+                </div>
+                <div th:if="${param.registered}" class="mb-4 bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <strong class="font-bold">Account Created:</strong>
+                    <span class="block sm:inline"> Registration successful! Please log in.</span>
+                </div>
+                <div th:if="${param.expired}" class="mb-4 bg-yellow-100 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <strong class="font-bold">Session Expired:</strong>
+                    <span class="block sm:inline"> Please log in again.</span>
+                </div>
+
+                <form th:action="@{/login}" method="post" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
+                        <div class="relative">
+                             <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </span>
+                            <input type="text" id="username" name="username" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="username" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <div class="relative">
+                             <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </span>
+                            <input type="password" id="password" name="password" class="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="••••••••" required>
+                            <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-blue-600 focus:outline-none">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" name="remember-me" class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded">
+                            <span class="ml-2">Remember me</span>
+                        </label>
+                        <a href="#" class="text-sm font-medium text-blue-600 hover:underline">Forgot Password?</a>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="login-btn w-full text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 active:scale-95">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </button>
+                    </div>
+
+                    <div class="text-center text-gray-600">
+                        Need an account?
+                        <a class="font-bold text-blue-600 hover:underline" href="/register">
+                            Sign up here
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-10">
+            <div>
+                <a href="/" class="logo mb-4 inline-block">
+                    <i class="fas fa-heartbeat text-2xl text-blue-400"></i>
+                    <span class="text-2xl font-extrabold text-white ml-2">Health<span class="text-blue-400">First</span></span>
+                </a>
+                <p class="text-gray-400 mb-4">
+                    Providing exceptional healthcare services with compassion and expertise. Your health is our top priority.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">About Us</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Our Services</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Find a Doctor</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Contact Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Our Services</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Primary Care</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Emergency Services</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Telemedicine</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white hover:translate-x-1 transition-transform inline-block">Pharmacy Services</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-white">Contact Us</h3>
+                <ul class="space-y-3 text-gray-400">
+                    <li class="flex items-start"><i class="fas fa-map-marker-alt mt-1 mr-3 text-blue-400"></i><span>123 Healthcare Ave, NY</span></li>
+                    <li class="flex items-start"><i class="fas fa-phone mt-1 mr-3 text-blue-400"></i><span>+1 (212) 555-0123</span></li>
+                    <li class="flex items-start"><i class="fas fa-envelope mt-1 mr-3 text-blue-400"></i><span>info@healthfirst.com</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 500);
+        }
+
+        // --- Navbar Scroll Effect ---
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md', 'bg-white');
+                navbar.classList.remove('bg-white/90');
+            } else {
+                navbar.classList.remove('shadow-md', 'bg-white');
+                navbar.classList.add('bg-white/90');
+            }
+        });
+
+        // --- Password Visibility Toggle ---
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                eyeIcon.classList.toggle('fa-eye');
+                eyeIcon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // --- Mobile Menu Toggle ---
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+    });
+</script>
+</body>
+</html>

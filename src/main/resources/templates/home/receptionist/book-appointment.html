@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Book Appointment - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans">
+<nav class="bg-white/90 backdrop-blur-sm shadow-sm">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center text-decoration-none">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-2xl font-extrabold text-gray-800">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <a th:href="@{/receptionist/dashboard}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition-colors">
+            Back to Dashboard
+        </a>
+    </div>
+</nav>
+
+<main class="min-h-screen py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Book New Appointment</h1>
+
+            <div th:if="${errorMessage}" class="bg-red-100 text-red-700 p-4 mb-6 rounded-lg">
+                <p th:text="${errorMessage}"></p>
+            </div>
+
+            <form th:action="@{/receptionist/appointments/book}" th:object="${appointment}" method="post" class="space-y-6">
+
+                <div>
+                    <label for="patient" class="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                    <select id="patient" th:field="*{patient}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="">Select a Patient...</option>
+                        <option th:each="p : ${patients}" th:value="${p.id}" th:text="${p.firstName + ' ' + p.lastName}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="doctor" class="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+                    <select id="doctor" th:field="*{doctor}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="">Select a Doctor...</option>
+                        <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName + ' (' + doc.specialization + ')'}"></option>
+                    </select>
+                </div>
+
+                <div id="availability-info" class="hidden bg-blue-50 border-l-4 border-blue-400 text-blue-700 p-4 rounded-r-lg">
+                    <p class="font-bold">Available Dates:</p>
+                    <div id="available-dates-list" class="mt-2 text-sm"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="appointmentDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="appointmentDate" th:field="*{appointmentDate}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="appointmentTime" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" id="appointmentTime" th:field="*{appointmentTime}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+                    <textarea id="reason" th:field="*{reason}" rows="4" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Annual Check-up, Consultation for fever..."></textarea>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors">Book Appointment</button>
+                    <a th:href="@{/receptionist/dashboard}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full transition-colors">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const doctorSelect = document.getElementById('doctor');
+        const availabilityInfo = document.getElementById('availability-info');
+        const availableDatesList = document.getElementById('available-dates-list');
+
+        doctorSelect.addEventListener('change', async function() {
+            const doctorId = this.value;
+            if (!doctorId) {
+                availabilityInfo.classList.add('hidden');
+                return;
+            }
+
+            availableDatesList.innerHTML = '<span class="italic">Loading...</span>';
+            availabilityInfo.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/receptionist/doctors/${doctorId}/availability`);
+                if (!response.ok) {
+                    throw new Error('Could not fetch availability.');
+                }
+                const availableDates = await response.json();
+
+                if (availableDates.length > 0) {
+                    let datesHtml = availableDates.map(date => `<span class="inline-block bg-blue-200 text-blue-800 rounded-full px-3 py-1 mr-2 mb-2">${date}</span>`).join('');
+                    availableDatesList.innerHTML = datesHtml;
+                } else {
+                    availableDatesList.innerHTML = '<span class="font-semibold text-red-600">No available dates found for this doctor.</span>';
+                }
+            } catch (error) {
+                console.error('Error fetching availability:', error);
+                availableDatesList.innerHTML = '<span class="font-semibold text-red-600">Could not load availability.</span>';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

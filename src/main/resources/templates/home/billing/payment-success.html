@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .animate-checkmark { animation: checkmark 0.6s ease-out forwards; }
+        .confetti { 
+            position: fixed; 
+            width: 10px; 
+            height: 10px; 
+            background: #f59e0b; 
+            animation: confetti 3s linear infinite;
+        }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300 no-print">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="flex items-center">
+            <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center text-green-600">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span class="text-sm font-medium">Payment Successful</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Success Message -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6 animate-fade-in-up">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-8 text-center">
+                    <div class="animate-checkmark mb-4">
+                        <i class="fas fa-check-circle text-6xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold mb-2">Payment Successful!</h1>
+                    <p class="text-green-100">Your payment has been processed successfully</p>
+                </div>
+                
+                <div class="p-8">
+                    <!-- Payment Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Details</h2>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Transaction ID:</span>
+                                    <span class="font-medium" th:text="${payment.transactionId ?: 'TXN-2024-' + T(java.lang.System).currentTimeMillis()}">TXN-2024-1234567890</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Invoice Number:</span>
+                                    <span class="font-medium" th:text="${invoice.invoiceNumber}">INV-2024-001</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Payment Method:</span>
+                                    <span class="font-medium" th:text="${payment.paymentMethod ?: 'Credit Card'}">Credit Card</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Amount Paid:</span>
+                                    <span class="font-medium text-green-600">$<span th:text="${#numbers.formatDecimal(payment.amount, 1, 2)}">200.00</span></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Payment Date:</span>
+                                    <span class="font-medium" th:text="${#temporals.format(payment.paymentDate, 'MMM dd, yyyy HH:mm')}">Jan 15, 2024 14:30</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check mr-1"></i> Completed
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">What's Next?</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                                        <i class="fas fa-envelope text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900">Email Confirmation</h3>
+                                        <p class="text-sm text-gray-600">A payment confirmation has been sent to your email</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                                        <i class="fas fa-file-pdf text-green-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900">Receipt Available</h3>
+                                        <p class="text-sm text-gray-600">Download your receipt for your records</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                                        <i class="fas fa-calendar-check text-purple-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900">Next Appointment</h3>
+                                        <p class="text-sm text-gray-600">You can schedule your next appointment if needed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 no-print">
+                        <a th:href="@{/patient/invoices/{invoiceId}/receipt-pdf/{paymentId}(invoiceId=${invoice.id}, paymentId=${payment.id})}"
+                           class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition text-center"
+                           download>
+                            <i class="fas fa-download mr-2"></i> Download Receipt
+                        </a>
+                        <button onclick="window.print()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                            <i class="fas fa-print mr-2"></i> Print Receipt
+                        </button>
+                        <a href="/patient/invoices" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition text-center">
+                            <i class="fas fa-list mr-2"></i> View All Invoices
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Digital Receipt -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden animate-fade-in-up" style="animation-delay: 0.3s">
+                <div class="bg-gray-50 px-6 py-4 border-b">
+                    <h2 class="text-xl font-semibold text-gray-900">Digital Receipt</h2>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Receipt Header -->
+                    <div class="text-center mb-8">
+                        <div class="flex justify-center mb-4">
+                            <i class="fas fa-heartbeat text-blue-600 text-3xl mr-2"></i>
+                            <span class="text-2xl font-bold text-gray-900">HealthFirst</span>
+                        </div>
+                        <p class="text-gray-600">123 Healthcare Avenue, Medical District, NY 10001</p>
+                        <p class="text-gray-600">Phone: (212) 555-0123 | Email: billing@healthfirst.com</p>
+                    </div>
+
+                    <!-- Receipt Details -->
+                    <div class="border-t border-b border-gray-200 py-6 mb-6">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-600">Receipt Date:</p>
+                                <p class="font-medium" th:text="${#temporals.format(#temporals.createNow(), 'MMM dd, yyyy HH:mm')}">Jan 15, 2024 14:30</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Patient:</p>
+                                <p class="font-medium" th:text="${invoice.patient.firstName + ' ' + invoice.patient.lastName}">John Doe</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Transaction ID:</p>
+                                <p class="font-medium" th:text="${payment.transactionId ?: 'TXN-2024-1234567890'}">TXN-2024-1234567890</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Payment Method:</p>
+                                <p class="font-medium" th:text="${payment.paymentMethod ?: 'Credit Card'}">Credit Card ****1234</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Breakdown -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Service Charges:</span>
+                            <span>$<span th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2)}">180.00</span></span>
+                        </div>
+                        <div th:if="${invoice.tax > 0}" class="flex justify-between">
+                            <span>Tax:</span>
+                            <span>$<span th:text="${#numbers.formatDecimal(invoice.tax, 1, 2)}">20.00</span></span>
+                        </div>
+                        <div th:if="${invoice.discount > 0}" class="flex justify-between text-green-600">
+                            <span>Discount:</span>
+                            <span>-$<span th:text="${#numbers.formatDecimal(invoice.discount, 1, 2)}">0.00</span></span>
+                        </div>
+                        <div class="border-t pt-3">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span>Total Paid:</span>
+                                <span class="text-green-600">$<span th:text="${#numbers.formatDecimal(payment.amount, 1, 2)}">200.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-8 pt-6 border-t text-center text-sm text-gray-500">
+                        <p>Thank you for choosing HealthFirst for your healthcare needs!</p>
+                        <p class="mt-2">For questions about this payment, please contact our billing department.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative no-print">
+    <div class="container mx-auto px-4">
+        <div class="text-center text-gray-400">
+            <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create confetti effect
+        createConfetti();
+        
+        // Auto-redirect after 30 seconds
+        setTimeout(() => {
+            if (confirm('Would you like to return to your invoices?')) {
+                window.location.href = '/patient/invoices';
+            }
+        }, 30000);
+    });
+
+    function createConfetti() {
+        const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6'];
+        
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }, i * 100);
+        }
+    }
+
+    function downloadReceipt() {
+        const invoiceId = window.location.pathname.split('/')[3];
+        window.open(`/patient/invoices/${invoiceId}/receipt-pdf`, '_blank');
+    }
+</script>
+</body>
+</html>

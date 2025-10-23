@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <title>Financial Reports - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style type="text/tailwindcss">
+        body {
+            background-color: #f0f9ff;
+            font-family: "Public Sans", "Noto Sans", sans-serif;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .report-card {
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .report-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        .report-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .chart-container canvas {
+            max-height: 300px !important;
+        }
+
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+            .chart-container canvas {
+                max-height: 250px !important;
+            }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#f0f9ff]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+
+    <nav class="sticky top-0 z-50 w-full bg-white shadow-sm no-print">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a href="/static" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex space-x-6">
+                <a href="/accountant/dashboard" class="text-gray-700 hover:text-blue-600 font-medium py-1">Dashboard</a>
+                <a href="/accountant/invoices" class="text-gray-700 hover:text-blue-600 font-medium py-1">Invoices</a>
+                <a href="/accountant/payments" class="text-gray-700 hover:text-blue-600 font-medium py-1">Payments</a>
+                <a href="/accountant/reports" class="text-blue-600 font-medium border-b-2 border-blue-600 py-1">Reports</a>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout-container flex h-full grow flex-col">
+        <main class="flex-1 p-4 md:p-6">
+            <div class="mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Financial Reports</h1>
+                <p class="text-slate-600 mt-1">Generate comprehensive financial reports and analytics</p>
+            </div>
+
+            <!-- Report Filters -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 no-print">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Report Filters</h2>
+                <form id="reportFilters" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                        <select id="dateRange" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="quarter">This Quarter</option>
+                            <option value="year">This Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <div id="customDateRange" class="hidden grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">From</label>
+                            <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">To</label>
+                            <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                        <select id="reportType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="overview">Financial Overview</option>
+                            <option value="revenue">Revenue Report</option>
+                            <option value="payments">Payment Analysis</option>
+                            <option value="outstanding">Outstanding Balances</option>
+                            <option value="plans">Payment Plans</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="button" onclick="generateReport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
+                            <i class="fas fa-chart-line mr-2"></i>Generate Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Financial Overview Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+                    <div class="flex items-center justify-between">
+                        <p class="text-base font-medium text-slate-600">Total Revenue</p>
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-green-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold mt-2 text-slate-800" id="totalRevenue">
+                        <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                    </p>
+                    <p class="text-sm text-gray-500 mt-1" id="revenueChange">Loading...</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+                    <div class="flex items-center justify-between">
+                        <p class="text-base font-medium text-slate-600">Outstanding</p>
+                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                            <i class="fas fa-exclamation-circle text-red-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold mt-2 text-slate-800" id="totalOutstanding">
+                        <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                    </p>
+                    <p class="text-sm text-red-600 mt-1">Requires attention</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+                    <div class="flex items-center justify-between">
+                        <p class="text-base font-medium text-slate-600">Paid Invoices</p>
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-file-invoice-dollar text-blue-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold mt-2 text-slate-800" id="paidInvoices">
+                        <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                    </p>
+                    <p class="text-sm text-blue-600 mt-1">This period</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-5 shadow-sm card-hover">
+                    <div class="flex items-center justify-between">
+                        <p class="text-base font-medium text-slate-600">Payment Plans</p>
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-calendar-alt text-purple-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold mt-2 text-slate-800" id="activePlans">
+                        <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                    </p>
+                    <p class="text-sm text-purple-600 mt-1">Active plans</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Revenue Chart -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Revenue Trend</h3>
+                        <button onclick="downloadChart('revenueChart')" class="text-gray-500 hover:text-gray-700 no-print">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Payment Methods Chart -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Payment Methods</h3>
+                        <button onclick="downloadChart('paymentMethodsChart')" class="text-gray-500 hover:text-gray-700 no-print">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="paymentMethodsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Tables -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Detailed Financial Report</h3>
+                    <div class="flex space-x-2 no-print">
+                        <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                        </button>
+                        <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-file-excel mr-2"></i>Export Excel
+                        </button>
+                        <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-print mr-2"></i>Print
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payments Received</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collection Rate</th>
+                        </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="reportTableBody">
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Loading report data...
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Report Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 no-print">
+                <div class="report-card bg-white rounded-lg p-6" onclick="generateQuickReport('aging')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Aging Report</h3>
+                            <p class="text-sm text-gray-600 mt-1">Outstanding balances by age</p>
+                        </div>
+                        <i class="fas fa-clock text-orange-600 text-2xl"></i>
+                    </div>
+                </div>
+
+                <div class="report-card bg-white rounded-lg p-6" onclick="generateQuickReport('collections')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Collections Report</h3>
+                            <p class="text-sm text-gray-600 mt-1">Payment collection analysis</p>
+                        </div>
+                        <i class="fas fa-money-check-alt text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+
+                <div class="report-card bg-white rounded-lg p-6" onclick="generateQuickReport('forecast')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Revenue Forecast</h3>
+                            <p class="text-sm text-gray-600 mt-1">Projected income analysis</p>
+                        </div>
+                        <i class="fas fa-chart-line text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="py-4 px-6 text-center text-sm text-slate-600 no-print">
+            <p>© 2025 HealthFirst Hospital Management System</p>
+        </footer>
+    </div>
+</div>
+
+<script>
+    let revenueChart, paymentMethodsChart;
+    let currentReportData = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        loadInitialData();
+
+        document.getElementById('dateRange').addEventListener('change', function() {
+            const customRange = document.getElementById('customDateRange');
+            if (this.value === 'custom') {
+                customRange.classList.remove('hidden');
+                customRange.classList.add('grid');
+            } else {
+                customRange.classList.add('hidden');
+                customRange.classList.remove('grid');
+            }
+        });
+
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    });
+
+    function loadInitialData() {
+        fetch('/accountant/api/dashboard/stats')
+            .then(response => response.json())
+            .then(data => {
+                updateDashboardCards(data);
+            })
+            .catch(error => {
+                console.error('Error loading dashboard stats:', error);
+                showErrorState();
+            });
+
+        generateReport();
+    }
+
+    function updateDashboardCards(data) {
+        document.getElementById('totalRevenue').textContent = formatCurrency(data.totalRevenue || 0);
+        document.getElementById('totalOutstanding').textContent = formatCurrency(data.outstandingAmount || 0);
+        document.getElementById('paidInvoices').textContent = data.totalInvoices || 0;
+        document.getElementById('activePlans').textContent = data.activePaymentPlans || 0;
+
+        document.getElementById('revenueChange').textContent = 'Current period';
+    }
+
+    function showErrorState() {
+        document.getElementById('totalRevenue').textContent = '$0.00';
+        document.getElementById('totalOutstanding').textContent = '$0.00';
+        document.getElementById('paidInvoices').textContent = '0';
+        document.getElementById('activePlans').textContent = '0';
+        document.getElementById('revenueChange').textContent = 'Unable to load data';
+    }
+
+    function initializeCharts() {
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const paymentCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+        paymentMethodsChart = new Chart(paymentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 158, 11)',
+                        'rgb(139, 92, 246)',
+                        'rgb(239, 68, 68)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    function generateReport() {
+        const dateRange = document.getElementById('dateRange').value;
+        const reportType = document.getElementById('reportType').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        const reportTableBody = document.getElementById('reportTableBody');
+        reportTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center"><i class="fas fa-spinner fa-spin mr-2"></i>Generating report...</td></tr>';
+
+        const apiUrl = `/api/accountant/reports/financial?reportType=${reportType}&range=${dateRange}&start=${startDate}&end=${endDate}`;
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                currentReportData = data;
+
+                if (data.summary) {
+                    updateDashboardCards(data.summary);
+                }
+
+                if (data.tableData) {
+                    updateReportTable(data.tableData);
+                }
+
+                if (data.chartData) {
+                    updateCharts(data.chartData);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching report:', error);
+                reportTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-red-600">Failed to generate report. Please try again.</td></tr>';
+            });
+    }
+
+    function updateReportTable(tableData) {
+        const reportTableBody = document.getElementById('reportTableBody');
+
+        if (!tableData || tableData.length === 0) {
+            reportTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No data available for the selected period.</td></tr>';
+            return;
+        }
+
+        reportTableBody.innerHTML = tableData.map(row => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${row.period}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(row.revenue)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(row.paymentsReceived)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(row.outstanding)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.collectionRate}%</td>
+            </tr>
+        `).join('');
+    }
+
+    function updateCharts(chartData) {
+        if (chartData.revenue) {
+            revenueChart.data.labels = chartData.revenue.labels;
+            revenueChart.data.datasets[0].data = chartData.revenue.data;
+            revenueChart.update();
+        }
+
+        if (chartData.paymentMethods) {
+            paymentMethodsChart.data.labels = chartData.paymentMethods.labels;
+            paymentMethodsChart.data.datasets[0].data = chartData.paymentMethods.data;
+            paymentMethodsChart.update();
+        }
+    }
+
+    function generateQuickReport(reportType) {
+        alert(`Generating ${reportType} report...`);
+    }
+
+    function exportToPDF() {
+        window.print();
+    }
+
+    function exportToExcel() {
+        if (!currentReportData || !currentReportData.tableData) {
+            alert('No data to export. Please generate a report first.');
+            return;
+        }
+
+        alert('Excel export functionality would be implemented here.');
+    }
+
+    function downloadChart(chartId) {
+        const canvas = document.getElementById(chartId);
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${chartId}.png`;
+        a.click();
+    }
+
+    function formatCurrency(amount) {
+        if (amount === null || amount === undefined) return '$0.00';
+        return '$' + Number(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+</script>
+</body>
+</html>

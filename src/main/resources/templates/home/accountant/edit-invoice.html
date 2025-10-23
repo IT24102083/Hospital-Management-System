@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Invoice - HealthFirst</title>
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+    html, body { -ms-overflow-style: none; scrollbar-width: none; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <a href="/dashboard" class="flex items-center">
+      <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+      <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+    </a>
+    <div class="flex items-center space-x-4">
+      <a href="/accountant/invoices" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Invoices
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main class="pt-24 pb-16 min-h-screen hero-gradient">
+  <div class="container mx-auto px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+          <h1 class="text-3xl font-bold">Edit Invoice</h1>
+          <p class="text-blue-100 mt-2">Modify invoice details and items</p>
+        </div>
+
+        <div class="p-6">
+          <form th:object="${invoice}"
+                th:action="@{/accountant/invoices/{id}/edit(id=${invoice.id})}"
+                method="post">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Left Column - Patient & Basic Info -->
+              <div class="lg:col-span-2 space-y-6">
+                <!-- Patient Info -->
+                <div class="bg-gray-50 rounded-lg p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span class="text-gray-600">Name:</span>
+                      <span class="font-medium ml-2" th:text="${invoice.patient.firstName + ' ' + invoice.patient.lastName}">John Doe</span>
+                    </div>
+                    <div>
+                      <span class="text-gray-600">Email:</span>
+                      <span class="font-medium ml-2" th:text="${invoice.patient.email}">john.doe@email.com</span>
+                    </div>
+                    <div>
+                      <span class="text-gray-600">Phone:</span>
+                      <span class="font-medium ml-2" th:text="${invoice.patient.phoneNumber}">+1 (555) 123-4567</span>
+                    </div>
+                    <div>
+                      <span class="text-gray-600">ID:</span>
+                      <span class="font-medium ml-2" th:text="${invoice.patient.id}">PT-001234</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Invoice Details -->
+                <div class="bg-gray-50 rounded-lg p-6">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Details</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label for="invoiceNumber" class="block text-gray-700 font-medium mb-2">Invoice Number</label>
+                      <input id="invoiceNumber" type="text" th:field="*{invoiceNumber}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+                    </div>
+                    <div>
+                      <label for="issueDate" class="block text-gray-700 font-medium mb-2">Issue Date</label>
+                      <input id="issueDate" type="date" th:field="*{issueDate}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                      <label for="dueDate" class="block text-gray-700 font-medium mb-2">Due Date</label>
+                      <input id="dueDate" type="date" th:field="*{dueDate}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <label for="description" class="block text-gray-700 font-medium mb-2">Description</label>
+                    <textarea id="description" th:field="*{description}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                  </div>
+                </div>
+
+                <!-- Services & Items -->
+                <div class="bg-gray-50 rounded-lg p-6">
+                  <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Services & Items</h3>
+                  </div>
+                  <div id="invoiceItemsContainer" class="space-y-4">
+                    <div th:each="item, iterStat : *{items}">
+                      <div class="custom-item bg-white border border-gray-300 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-3">
+                          <h4 class="font-medium text-gray-900">Item <span th:text="${iterStat.index + 1}">1</span></h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                          <div>
+                            <label th:for="'itemDesc' + ${iterStat.index}" class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                            <input th:id="'itemDesc' + ${iterStat.index}" type="text" th:field="*{items[__${iterStat.index}__].description}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Service/Item name">
+                          </div>
+                          <div>
+                            <label th:for="'unitPrice' + ${iterStat.index}" class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                            <input th:id="'unitPrice' + ${iterStat.index}" type="number" th:field="*{items[__${iterStat.index}__].unitPrice}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" min="0" step="0.01">
+                          </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-3">
+                          <div>
+                            <label th:for="'quantity' + ${iterStat.index}" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                            <input th:id="'quantity' + ${iterStat.index}" type="number" th:field="*{items[__${iterStat.index}__].quantity}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" min="1" step="1">
+                          </div>
+                          <div>
+                            <label th:for="'lineTotal' + ${iterStat.index}" class="block text-sm font-medium text-gray-700 mb-1">Line Total</label>
+                            <input th:id="'lineTotal' + ${iterStat.index}" type="number" th:field="*{items[__${iterStat.index}__].lineTotal}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column - Invoice Summary -->
+              <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Summary</h3>
+                  <div class="space-y-3 mb-4">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Subtotal:</span>
+                      <span class="font-medium" th:text="${#numbers.formatDecimal(invoice.subtotal, 1, 2)}">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <label for="tax" class="text-gray-600">Tax (8%):</label>
+                      <input id="tax" type="number" th:field="*{tax}" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm mr-2" min="0" step="0.01">
+                      <span class="text-sm text-gray-500">$</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <label for="discount" class="text-gray-600">Discount:</label>
+                      <input id="discount" type="number" th:field="*{discount}" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm mr-2" min="0" step="0.01">
+                      <span class="text-sm text-gray-500">$</span>
+                    </div>
+                    <div class="border-t pt-2">
+                      <div class="flex justify-between text-lg font-bold">
+                        <span>Total:</span>
+                        <span class="text-blue-600" th:text="${#numbers.formatDecimal(invoice.total, 1, 2)}">$0.00</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-6 space-y-3">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                      <i class="fas fa-save mr-2"></i> Save Changes
+                    </button>
+                    <button type="button" onclick="history.back()" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg">
+                      <i class="fas fa-times mr-2"></i> Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+  <div class="container mx-auto px-4">
+    <div class="text-center text-gray-400">
+      <p>&copy; 2025 HealthFirst. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

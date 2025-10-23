@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <title>POS Terminal - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style type="text/tailwindcss">
+        body {
+            background-color: #f0f9ff;
+            font-family: "Public Sans", "Noto Sans", sans-serif;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .pos-button {
+            transition: all 0.2s ease;
+        }
+        .pos-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .pos-button:active {
+            transform: translateY(0);
+        }
+        .number-pad button {
+            min-height: 60px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .amount-display {
+            font-family: 'Courier New', monospace;
+        }
+        .processing {
+            animation: pulse 1.5s infinite;
+        }
+
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#f0f9ff]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+
+    <nav class="sticky top-0 z-50 w-full bg-white shadow-sm no-print">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a href="/static" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex space-x-6">
+                <a href="/dashboard" class="text-gray-700 hover:text-blue-600 font-medium py-1">Dashboard</a>
+                <a href="/accountant/invoices" class="text-gray-700 hover:text-blue-600 font-medium py-1">Invoices</a>
+                <a href="/accountant/payments" class="text-gray-700 hover:text-blue-600 font-medium py-1">Payments</a>
+                <a href="/accountant/pos-terminal" class="text-blue-600 font-medium border-b-2 border-blue-600 py-1">POS Terminal</a>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:flex items-center text-green-600">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    <span class="text-sm font-medium">Terminal Active</span>
+                </div>
+                <a href="/dashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout-container flex h-full grow flex-col">
+        <main class="flex-1 p-4 md:p-6">
+            <div class="mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800">POS Terminal</h1>
+                <p class="text-slate-600 mt-1">In-person payment processing for walk-in customers</p>
+            </div>
+
+            <!-- Terminal Status -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 no-print">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-credit-card text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Terminal Status: Active</h2>
+                            <p class="text-sm text-gray-600">Terminal ID: POS-001 | Last Sync: Just now</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Today's Transactions</p>
+                        <p class="text-2xl font-bold text-green-600">$2,450.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left Column - Transaction Input -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Customer Information -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                                <select id="customerType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="existing">Existing Patient</option>
+                                    <option value="walkin">Walk-in Customer</option>
+                                    <option value="emergency">Emergency Payment</option>
+                                </select>
+                            </div>
+
+                            <div id="patientSearchDiv">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Search Patient</label>
+                                <div class="relative">
+                                    <input type="text" id="patientSearch" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Search by name or ID...">
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="walkInCustomerInfo" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                                <input type="text" id="customerName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Full Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="tel" id="customerPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Details</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+                                <select id="paymentType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="invoice">Invoice Payment</option>
+                                    <option value="service">Direct Service Payment</option>
+                                    <option value="deposit">Deposit/Advance</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div id="invoiceNumberDiv">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Invoice Number</label>
+                                <input type="text" id="invoiceNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="INV-2024-001">
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <input type="text" id="paymentDescription" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Payment description...">
+                        </div>
+                    </div>
+
+                    <!-- Amount Input with Number Pad -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Amount Entry</h3>
+
+                        <!-- Amount Display -->
+                        <div class="bg-slate-800 rounded-lg p-6 mb-6">
+                            <div class="text-center">
+                                <div class="text-green-400 text-4xl font-bold amount-display" id="amountDisplay">$0.00</div>
+                                <div class="text-slate-400 text-sm mt-2">Enter payment amount</div>
+                            </div>
+                        </div>
+
+                        <!-- Number Pad -->
+                        <div class="number-pad grid grid-cols-3 gap-3 mb-4">
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('1')">1</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('2')">2</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('3')">3</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('4')">4</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('5')">5</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('6')">6</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('7')">7</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('8')">8</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('9')">9</button>
+                            <button class="pos-button bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg" onclick="addDigit('.')">.</button>
+                            <button class="pos-button bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg" onclick="addDigit('0')">0</button>
+                            <button class="pos-button bg-red-500 hover:bg-red-600 text-white rounded-lg" onclick="clearAmount()">
+                                <i class="fas fa-backspace"></i>
+                            </button>
+                        </div>
+
+                        <!-- Quick Amount Buttons -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <button class="pos-button bg-blue-500 hover:bg-blue-600 text-white py-2 rounded" onclick="setQuickAmount(50)">$50</button>
+                            <button class="pos-button bg-blue-500 hover:bg-blue-600 text-white py-2 rounded" onclick="setQuickAmount(100)">$100</button>
+                            <button class="pos-button bg-blue-500 hover:bg-blue-600 text-white py-2 rounded" onclick="setQuickAmount(200)">$200</button>
+                            <button class="pos-button bg-blue-500 hover:bg-blue-600 text-white py-2 rounded" onclick="setQuickAmount(500)">$500</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Transaction Summary & Payment Processing -->
+                <div class="space-y-6">
+                    <!-- Transaction Summary -->
+                    <div class="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Transaction Summary</h3>
+
+                        <div class="space-y-3 mb-6">
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Customer:</span>
+                                <span id="summaryCustomer" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Payment Type:</span>
+                                <span id="summaryPaymentType" class="font-medium">Invoice Payment</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Description:</span>
+                                <span id="summaryDescription" class="font-medium">-</span>
+                            </div>
+                            <div class="border-t pt-3">
+                                <div class="flex justify-between text-lg font-bold">
+                                    <span>Amount:</span>
+                                    <span id="summaryAmount" class="text-blue-600">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Selection -->
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-3">Payment Method</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100">
+                                    <input type="radio" name="paymentMethod" value="card" class="mr-3" checked>
+                                    <i class="fas fa-credit-card text-blue-600 mr-3"></i>
+                                    <span>Credit/Debit Card</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100">
+                                    <input type="radio" name="paymentMethod" value="cash" class="mr-3">
+                                    <i class="fas fa-money-bill-wave text-green-600 mr-3"></i>
+                                    <span>Cash</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100">
+                                    <input type="radio" name="paymentMethod" value="check" class="mr-3">
+                                    <i class="fas fa-money-check text-purple-600 mr-3"></i>
+                                    <span>Check</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Process Payment Button -->
+                        <button id="processPaymentBtn" onclick="processPayment()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg disabled:opacity-50 disabled:cursor-not-allowed mb-3" disabled>
+                            <i class="fas fa-credit-card mr-2"></i>
+                            Process Payment
+                        </button>
+
+                        <!-- Clear Transaction -->
+                        <button onclick="clearTransaction()" class="w-full bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-6 rounded-lg">
+                            <i class="fas fa-times mr-2"></i>
+                            Clear Transaction
+                        </button>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+
+                        <div class="space-y-3" id="recentTransactions">
+                            <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-900">$150.00</p>
+                                    <p class="text-sm text-gray-600">Jane Smith - Card</p>
+                                </div>
+                                <span class="text-xs text-green-800 bg-green-200 px-2 py-1 rounded">Success</span>
+                            </div>
+
+                            <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-900">$75.50</p>
+                                    <p class="text-sm text-gray-600">John Doe - Cash</p>
+                                </div>
+                                <span class="text-xs text-green-800 bg-green-200 px-2 py-1 rounded">Success</span>
+                            </div>
+
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-900">$200.00</p>
+                                    <p class="text-sm text-gray-600">Mike Wilson - Card</p>
+                                </div>
+                                <span class="text-xs text-red-800 bg-red-200 px-2 py-1 rounded">Failed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="py-4 px-6 text-center text-sm text-slate-600 no-print">
+            <p>© 2025 HealthFirst Hospital Management System</p>
+        </footer>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div id="processingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        <div class="processing mb-4">
+            <i class="fas fa-credit-card text-blue-600 text-4xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Processing Payment</h3>
+        <p class="text-gray-600 mb-4">Please wait while we process your transaction...</p>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="progressBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAmount = 0;
+    let hasDecimal = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Customer type change handler
+        document.getElementById('customerType').addEventListener('change', function() {
+            const walkInDiv = document.getElementById('walkInCustomerInfo');
+            const patientSearchDiv = document.getElementById('patientSearchDiv');
+
+            if (this.value === 'walkin') {
+                walkInDiv.classList.remove('hidden');
+                patientSearchDiv.classList.add('hidden');
+            } else {
+                walkInDiv.classList.add('hidden');
+                patientSearchDiv.classList.remove('hidden');
+            }
+            updateSummary();
+        });
+
+        // Payment type change handler
+        document.getElementById('paymentType').addEventListener('change', function() {
+            const invoiceDiv = document.getElementById('invoiceNumberDiv');
+            if (this.value === 'invoice') {
+                invoiceDiv.classList.remove('hidden');
+            } else {
+                invoiceDiv.classList.add('hidden');
+            }
+            updateSummary();
+        });
+
+        // Input field change handlers
+        document.getElementById('customerName').addEventListener('input', updateSummary);
+        document.getElementById('patientSearch').addEventListener('input', updateSummary);
+        document.getElementById('paymentDescription').addEventListener('input', updateSummary);
+
+        updateDisplay();
+        updateSummary();
+    });
+
+    function addDigit(digit) {
+        if (digit === '.' && hasDecimal) return;
+        if (digit === '.') {
+            hasDecimal = true;
+            currentAmount = currentAmount.toString() + '.';
+        } else {
+            if (hasDecimal) {
+                const parts = currentAmount.toString().split('.');
+                if (parts[1] && parts[1].length >= 2) return; // Max 2 decimal places
+            }
+            if (currentAmount === 0 && digit !== '.') {
+                currentAmount = parseInt(digit);
+            } else {
+                currentAmount = currentAmount.toString() + digit;
+            }
+        }
+        updateDisplay();
+        updateSummary();
+    }
+
+    function clearAmount() {
+        if (currentAmount.toString().length === 1) {
+            currentAmount = 0;
+            hasDecimal = false;
+        } else {
+            const str = currentAmount.toString();
+            if (str[str.length - 1] === '.') {
+                hasDecimal = false;
+            }
+            currentAmount = str.slice(0, -1) || 0;
+        }
+        updateDisplay();
+        updateSummary();
+    }
+
+    function setQuickAmount(amount) {
+        currentAmount = amount;
+        hasDecimal = false;
+        updateDisplay();
+        updateSummary();
+    }
+
+    function updateDisplay() {
+        const amount = parseFloat(currentAmount) || 0;
+        document.getElementById('amountDisplay').textContent = `$${amount.toFixed(2)}`;
+
+        // Enable/disable process button
+        const processBtn = document.getElementById('processPaymentBtn');
+        processBtn.disabled = amount <= 0;
+    }
+
+    function updateSummary() {
+        const customerType = document.getElementById('customerType').value;
+        const paymentType = document.getElementById('paymentType').value;
+        const description = document.getElementById('paymentDescription').value;
+
+        let customerName = '-';
+        if (customerType === 'walkin') {
+            customerName = document.getElementById('customerName').value || 'Walk-in Customer';
+        } else {
+            customerName = document.getElementById('patientSearch').value || 'Existing Patient';
+        }
+
+        document.getElementById('summaryCustomer').textContent = customerName;
+        document.getElementById('summaryPaymentType').textContent = paymentType.charAt(0).toUpperCase() + paymentType.slice(1) + ' Payment';
+        document.getElementById('summaryDescription').textContent = description || '-';
+
+        const amount = parseFloat(currentAmount) || 0;
+        document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+    }
+
+    function processPayment() {
+        const amount = parseFloat(currentAmount);
+        if (amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+        // Show processing modal
+        document.getElementById('processingModal').classList.remove('hidden');
+
+        // Simulate payment processing
+        let progress = 0;
+        const progressBar = document.getElementById('progressBar');
+
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.getElementById('processingModal').classList.add('hidden');
+                    showPaymentSuccess(amount, paymentMethod);
+                    addToRecentTransactions(amount, paymentMethod, true);
+                    clearTransaction();
+                }, 500);
+            }
+        }, 200);
+    }
+
+    function showPaymentSuccess(amount, method) {
+        alert(`Payment Successful!\nAmount: $${amount.toFixed(2)}\nMethod: ${method.charAt(0).toUpperCase() + method.slice(1)}`);
+    }
+
+    function addToRecentTransactions(amount, method, success) {
+        const customerName = document.getElementById('summaryCustomer').textContent;
+        const container = document.getElementById('recentTransactions');
+
+        const statusClass = success ? 'bg-green-50' : 'bg-red-50';
+        const statusBadge = success ?
+            '<span class="text-xs text-green-800 bg-green-200 px-2 py-1 rounded">Success</span>' :
+            '<span class="text-xs text-red-800 bg-red-200 px-2 py-1 rounded">Failed</span>';
+
+        const transactionHTML = `
+            <div class="flex justify-between items-center p-3 ${statusClass} rounded-lg">
+                <div>
+                    <p class="font-medium text-gray-900">$${amount.toFixed(2)}</p>
+                    <p class="text-sm text-gray-600">${customerName} - ${method.charAt(0).toUpperCase() + method.slice(1)}</p>
+                </div>
+                ${statusBadge}
+            </div>
+        `;
+
+        container.insertAdjacentHTML('afterbegin', transactionHTML);
+
+        // Keep only last 5 transactions
+        const transactions = container.children;
+        while (transactions.length > 5) {
+            container.removeChild(transactions[transactions.length - 1]);
+        }
+    }
+
+    function clearTransaction() {
+        currentAmount = 0;
+        hasDecimal = false;
+        updateDisplay();
+
+        // Reset form fields
+        document.getElementById('customerType').value = 'existing';
+        document.getElementById('paymentType').value = 'invoice';
+        document.getElementById('customerName').value = '';
+        document.getElementById('patientSearch').value = '';
+        document.getElementById('paymentDescription').value = '';
+        document.getElementById('invoiceNumber').value = '';
+
+        // Hide walk-in customer fields
+        document.getElementById('walkInCustomerInfo').classList.add('hidden');
+        document.getElementById('patientSearchDiv').classList.remove('hidden');
+        document.getElementById('invoiceNumberDiv').classList.remove('hidden');
+
+        // Reset payment method
+        document.querySelector('input[name="paymentMethod"][value="card"]').checked = true;
+
+        updateSummary();
+    }
+</script>
+</body>
+</html>

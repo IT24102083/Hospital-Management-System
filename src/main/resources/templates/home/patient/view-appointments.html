@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments - HealthFirst</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/medical-cross.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        .logo { display: flex; align-items: center; text-decoration: none; }
+        .logo-icon { font-size: 28px; color: #2563eb; margin-right: 8px; }
+        .logo-text { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .logo-text span { color: #2563eb; }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background-color: #2563eb; transition: width 0.3s ease; }
+        .nav-link:hover { color: #2563eb; }
+        .nav-link:hover:after { width: 100%; }
+        .login-btn { background: linear-gradient(to right, #1e40af, #1d4ed8); box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3); transition: all 0.3s ease; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(30, 64, 175, 0.4); }
+        .hero-gradient { background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(14, 116, 144, 0.1) 100%); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.2); border-top: 5px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<nav id="navbar" class="fixed w-full bg-white/90 backdrop-blur-sm z-50 shadow-sm transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="logo">
+            <i class="fas fa-heartbeat logo-icon"></i>
+            <span class="logo-text">Health<span>First</span></span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+            <a href="/" class="nav-link text-gray-700 font-medium">Home</a>
+            <a href="/dashboard" class="nav-link text-gray-700 font-medium">Dashboard</a>
+            <a href="/pharmacy" class="nav-link text-gray-700 font-medium">Pharmacy</a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                    <span class="font-medium" th:text="${patient != null ? (patient.firstName + ' ' + patient.lastName) : 'Patient'}">Patient Name</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="/patient/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                    <div class="border-t border-gray-100"></div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+            <div class="md:hidden">
+                <button id="mobileMenuBtn" class="text-gray-700 p-2 focus:outline-none"><i class="fas fa-bars text-2xl"></i></button>
+            </div>
+        </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden bg-white shadow-lg w-full absolute left-0 p-4 z-50">
+    </div>
+</nav>
+
+<main class="pt-24 pb-16 hero-gradient min-h-screen">
+    <div class="container mx-auto px-4 animate-fade-in-up">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-6 flex justify-between items-center border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-gray-800">My Appointments</h1>
+                <a href="/appointments/book" class="login-btn text-white font-semibold py-2 px-4 rounded-full text-sm shadow-md hover:shadow-lg transition-shadow">
+                    <i class="fas fa-plus mr-1"></i> Book New Appointment
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-600">
+                    <tr>
+                        <th class="p-4 font-semibold">Date</th>
+                        <th class="p-4 font-semibold">Time</th>
+                        <th class="p-4 font-semibold">Doctor</th>
+                        <th class="p-4 font-semibold">Reason</th>
+                        <th class="p-4 font-semibold">Status</th>
+                        <th class="p-4 font-semibold">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                    <tr th:each="appointment : ${appointments}">
+                        <td class="p-4" th:text="${#temporals.format(appointment.appointmentDate, 'MMM dd, yyyy')}"></td>
+                        <td class="p-4" th:text="${#temporals.format(appointment.appointmentTime, 'hh:mm a')}"></td>
+                        <td class="p-4" th:text="${appointment.doctor != null ? 'Dr. ' + appointment.doctor.firstName + ' ' + appointment.doctor.lastName : 'N/A'}"></td>
+                        <td class="p-4" th:text="${appointment.reason}"></td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-full"
+                                  th:text="${appointment.status}"
+                                  th:classappend="${#strings.toString(appointment.status) == 'SCHEDULED' ? 'bg-blue-100 text-blue-800' : ''} +
+                                                 ${#strings.toString(appointment.status) == 'COMPLETED' ? 'bg-green-100 text-green-800' : ''} +
+                                                 ${#strings.toString(appointment.status) == 'CANCELLED' ? 'bg-gray-100 text-gray-800' : ''} +
+                                                 ${#strings.toString(appointment.status) == 'NO_SHOW' ? 'bg-yellow-100 text-yellow-800' : ''}">
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <a th:if="${#strings.toString(appointment.status) == 'SCHEDULED'}" th:href="@{'/appointments/cancel/' + ${appointment.id}}"
+                               class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-full text-xs"
+                               onclick="return confirm('Are you sure you want to cancel this appointment?')">Cancel</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${appointments == null || #lists.isEmpty(appointments)}">
+                        <td colspan="6" class="p-8 text-center text-gray-500">You have no appointments.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative">
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Loading Overlay ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }
+
+        // --- Navbar Scroll Effect ---
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md', 'bg-white');
+                navbar.classList.remove('bg-white/90');
+            } else {
+                navbar.classList.remove('shadow-md', 'bg-white');
+                navbar.classList.add('bg-white/90');
+            }
+        });
+
+        // --- User Menu Dropdown Toggle ---
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+        if(userMenuBtn) {
+            userMenuBtn.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+            });
+            // Hide dropdown if clicked outside
+            document.addEventListener('click', function(event) {
+                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

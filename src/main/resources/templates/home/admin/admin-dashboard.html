@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard - HealthFirst</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Public+Sans:wght@400;500;700;900"/>
+    <style>
+        body {
+            background-color: #d3eaf2;
+            font-family: "Public Sans", sans-serif;
+        }
+        .nav-link.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+        /* Custom styles for the form toggle switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-[#d3eaf2]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+    <nav class="sticky top-0 z-50 w-full bg-[#d3eaf2]/80 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto flex justify-between items-center py-3 px-4">
+            <a href="/" class="flex items-center">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl mr-2"></i>
+                <span class="text-xl font-bold">Health<span class="text-blue-600">First</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a th:href="@{/admin/dashboard}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'dashboard' ? 'active' : ''}">Dashboard</a>
+                <a th:href="@{/admin/dashboard(view='users')}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'users' or currentView == 'userForm' ? 'active' : ''}">User Management</a>
+                <a th:href="@{/admin/dashboard(view='doctors')}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'doctors' ? 'active' : ''}">Doctor Management</a>
+                <a th:href="@{/admin/dashboard(view='appointments')}" class="nav-link text-gray-700 font-medium" th:classappend="${currentView == 'appointments' ? 'active' : ''}">Appointments</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                        <span class="font-medium">Admin</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                        <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 p-4 md:p-6">
+        <div class="rounded-2xl bg-white/80 p-4 md:p-6 shadow-lg backdrop-blur-lg">
+
+            <div th:if="${currentView == 'dashboard'}">
+                <h1 class="text-3xl font-bold text-gray-800 mb-8">Dashboard Overview</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Total Users</p><i class="fas fa-users text-3xl opacity-80"></i></div>
+                        <p class="text-4xl font-bold mt-2" th:text="${totalUsers}">0</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Total Doctors</p><i class="fas fa-user-md text-3xl opacity-80"></i></div>
+                        <p class="text-4xl font-bold mt-2" th:text="${doctorCount}">0</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-yellow-500 to-blue-400 p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">Total Appointments</p><i class="fas fa-calendar-check text-3xl opacity-80"></i></div>
+                        <p class="text-4xl font-bold mt-2" th:text="${appointmentCount}">0</p>
+                    </div>
+                    <div class="rounded-lg bg-gradient-to-r from-green-500 to-teal-400 p-6 shadow-sm text-white">
+                        <div class="flex items-center justify-between"><p class="text-base font-medium">App Version</p><i class="fas fa-cogs text-3xl opacity-80"></i></div>
+                        <p class="text-4xl font-bold mt-2" th:text="${appVersion}">0.0.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${currentView == 'users'}">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">User Management</h1>
+                    <a th:href="@{/admin/dashboard(view='addUser')}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i> Add User
+                    </a>
+                </div>
+                <div th:if="${successMessage}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+                    <p th:text="${successMessage}"></p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="py-3 px-4 text-left font-medium text-sm">ID</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Username</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Full Name</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Email</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Role</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Status</th>
+                            <th class="py-3 px-4 text-center font-medium text-sm">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                        <tr th:each="user : ${users}" class="hover:bg-gray-50">
+                            <td class="py-3 px-4" th:text="${user.id}"></td>
+                            <td class="py-3 px-4" th:text="${user.username}"></td>
+                            <td class="py-3 px-4" th:text="${user.firstName + ' ' + user.lastName}"></td>
+                            <td class="py-3 px-4" th:text="${user.email}"></td>
+                            <td class="py-3 px-4"><span class="font-mono text-xs" th:text="${#strings.replace(user.role.name(), 'ROLE_', '')}"></span></td>
+                            <td class="py-3 px-4">
+                                <span th:if="${user.active}" class="bg-green-100 text-green-800 py-1 px-3 rounded-full text-xs font-semibold">Active</span>
+                                <span th:unless="${user.active}" class="bg-red-100 text-red-800 py-1 px-3 rounded-full text-xs font-semibold">Inactive</span>
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <a th:href="@{/admin/dashboard(view='editUser', id=${user.id})}" class="text-yellow-500 hover:text-yellow-700 mr-3" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" class="text-red-500 hover:text-red-700" onclick="return confirm('Are you sure you want to delete this user?')" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div th:if="${currentView == 'doctors'}">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Doctor Management</h1>
+                    <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i> Add Doctor
+                    </a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="py-3 px-4 text-left font-medium text-sm">ID</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Name</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Specialization</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Email</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Phone</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Status</th>
+                            <th class="py-3 px-4 text-center font-medium text-sm">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                        <tr th:each="doctor : ${doctors}" class="hover:bg-gray-50">
+                            <td class="py-3 px-4" th:text="${doctor.id}"></td>
+                            <td class="py-3 px-4" th:text="${'Dr. ' + doctor.firstName + ' ' + doctor.lastName}"></td>
+                            <td class="py-3 px-4" th:text="${doctor.specialization}"></td>
+                            <td class="py-3 px-4" th:text="${doctor.email}"></td>
+                            <td class="py-3 px-4" th:text="${doctor.phoneNumber}"></td>
+                            <td class="py-3 px-4">
+                                <span th:if="${doctor.active}" class="bg-green-100 text-green-800 py-1 px-3 rounded-full text-xs font-semibold">Active</span>
+                                <span th:unless="${doctor.active}" class="bg-red-100 text-red-800 py-1 px-3 rounded-full text-xs font-semibold">Inactive</span>
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <a href="#" class="text-yellow-500 hover:text-yellow-700 mr-3" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a href="#" class="text-red-500 hover:text-red-700" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(doctors)}">
+                            <td colspan="7" class="text-center py-8 text-gray-500">No doctors found.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div th:if="${currentView == 'appointments'}">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Appointment Management</h1>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <form th:action="@{/admin/dashboard}" method="get" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                        <input type="hidden" name="view" value="appointments"/>
+                        <div class="md:col-span-2">
+                            <label for="patientName" class="text-sm font-medium text-gray-700">Patient Name</label>
+                            <input type="text" name="patientName" id="patientName" th:value="${patientName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="doctorName" class="text-sm font-medium text-gray-700">Doctor Name</label>
+                            <input type="text" name="doctorName" id="doctorName" th:value="${doctorName}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                        </div>
+                        <div>
+                            <label for="date" class="text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" name="date" id="date" th:value="${date}" class="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+                        </div>
+                        <div>
+                            <label for="status" class="text-sm font-medium text-gray-700">Status</label>
+                            <select name="status" id="status" class="mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                                <option value="">All</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == status}"></option>
+                            </select>
+                        </div>
+                        <div class="flex space-x-2 md:col-span-6 justify-end mt-4">
+                            <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-filter mr-2"></i>Filter
+                            </button>
+                            <a th:href="@{/admin/dashboard(view='appointments')}" class="text-center bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300">
+                                <i class="fas fa-times mr-2"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="py-3 px-4 text-left font-medium text-sm">ID</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Patient</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Doctor</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Date & Time</th>
+                            <th class="py-3 px-4 text-left font-medium text-sm">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                        <tr th:each="appt : ${appointments}" class="hover:bg-gray-50">
+                            <td class="py-3 px-4" th:text="${appt.id}"></td>
+                            <td class="py-3 px-4" th:text="${appt.patient.firstName + ' ' + appt.patient.lastName}"></td>
+                            <td class="py-3 px-4" th:text="${'Dr. ' + appt.doctor.firstName + ' ' + appt.doctor.lastName}"></td>
+                            <td class="py-3 px-4" th:text="${#temporals.format(appt.appointmentDate, 'yyyy-MM-dd')} + ' at ' + ${#temporals.format(appt.appointmentTime, 'hh:mm a')}"></td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 text-xs font-bold rounded-full"
+                                      th:text="${appt.status}"
+                                      th:classappend="${#strings.toString(appt.status) == 'COMPLETED' ? 'bg-green-100 text-green-800' : ''} +
+                                                     ${#strings.toString(appt.status) == 'SCHEDULED' ? 'bg-blue-100 text-blue-800' : ''} +
+                                                     ${#strings.toString(appt.status) == 'CANCELLED' ? 'bg-red-100 text-red-800' : ''} +
+                                                     ${#strings.toString(appt.status) == 'NO_SHOW' ? 'bg-gray-100 text-gray-800' : ''}">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(appointments)}">
+                            <td colspan="5" class="text-center py-8 text-gray-500">No appointments found.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <div th:if="${currentView == 'userForm'}">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800" th:text="${formAction == 'add'} ? 'Add New User' : 'Edit User Details'"></h1>
+                    <p class="text-gray-500 mt-1" th:text="${formAction == 'add'} ? 'Create a new user profile.' : 'Modify the details of an existing user.'"></p>
+                </div>
+
+                <form th:action="${formAction == 'add'} ? @{/admin/users/add} : @{/admin/users/update/{id}(id=${user.id})}" th:object="${user}" method="post">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <div class="mb-6">
+                                    <h2 class="text-xl font-semibold text-gray-800">Personal Information</h2>
+                                    <p class="text-sm text-gray-500">User's basic contact details.</p>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                                        <input type="text" id="firstName" th:field="*{firstName}" placeholder="e.g., John" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                                        <input type="text" id="lastName" th:field="*{lastName}" placeholder="e.g., Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                                        <input type="text" id="phoneNumber" th:field="*{phoneNumber}" placeholder="e.g., 0123456789" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                        <input type="text" id="address" th:field="*{address}" placeholder="e.g., 123 Main St, Anytown" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-800 mb-6">Account Credentials</h2>
+                                <div class="space-y-6">
+
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                                        <div class="relative mt-1">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-envelope text-gray-400"></i>
+                                            </div>
+                                            <input type="email" id="email" th:field="*{email}" placeholder="e.g., user@hospital.com" class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                                        <div class="relative mt-1">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-user text-gray-400"></i>
+                                            </div>
+                                            <input type="text" id="username" th:field="*{username}" placeholder="e.g., johndoe" class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                        <div class="relative mt-1">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-lock text-gray-400"></i>
+                                            </div>
+                                            <input type="password" id="password" name="password" class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" th:placeholder="${formAction == 'edit'} ? 'Leave blank to keep current password' : 'Enter a strong password'">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-1">
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-800 mb-6">Role & Status</h2>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="role" class="block text-sm font-medium text-gray-700">User Role</label>
+                                        <select id="role" th:field="*{role}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <option th:each="roleOpt : ${roles}" th:value="${roleOpt}" th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(roleOpt.name(), 'ROLE_', '')))}"></option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Account Status</label>
+                                        <div class="mt-2 flex items-center justify-between">
+                                            <span class="text-gray-900" th:text="*{active} ? 'Active' : 'Inactive'"></span>
+                                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                                <input type="checkbox" id="active" th:field="*{active}" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                                <label for="active" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-4">
+                        <a th:href="@{/admin/dashboard(view='users')}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">Cancel</a>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center">
+                            <i class="fas fa-save mr-2"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-4 px-6 text-center text-sm text-slate-600">
+        <p>© 2025 HealthFirst Hospital Management System</p>
+    </footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenu = document.getElementById('userMenu');
+
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', () => userMenu.classList.toggle('hidden'));
+            document.addEventListener('click', function(event) {
+                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
