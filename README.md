@@ -149,7 +149,7 @@
 ### **Backend Technologies**
 
 ```
-├── Java 11                    # Core programming language
+├── Java 11                   # Core programming language
 ├── Spring Boot 2.7.14        # Application framework
 ├── Spring Data JPA           # Database abstraction
 ├── Spring Security           # Authentication & authorization
