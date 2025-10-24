@@ -417,7 +417,7 @@ java -jar target/hospital-management-system-0.0.1-SNAPSHOT.jar
 
 ```
 🌐 Application URL: http://localhost:8080
-📧 Default Admin: admin / password
+📧 Default Admin: admin / admin
 ```
 
 ---
@@ -428,12 +428,12 @@ java -jar target/hospital-management-system-0.0.1-SNAPSHOT.jar
 
 | Role | Username | Password | Access Level |
 |------|----------|----------|--------------|
-| 🔑 **Admin** | `admin` | `password` | Full system access |
-| 👨‍⚕️ **Doctor** | `doctor1`, `doctor2` | `password` | Medical records, appointments |
-| 🧑‍⚕️ **Patient** | `patient1`, `patient2` | `password` | Personal health records |
-| 💊 **Pharmacist** | `pharmacist1` | `password` | Inventory, prescriptions |
-| 🤝 **Receptionist** | `receptionist1` | `password` | Registration, appointments |
-| 💰 **Accountant** | *Create via Admin* | - | Billing, financial reports |
+| 🔑 **Admin** | `admin` | `admin` | Full system access |
+| 👨‍⚕️ **Doctor** | `doctor1`, `doctor2` | `doctor` | Medical records, appointments |
+| 🧑‍⚕️ **Patient** | `patient1`, `patient2` | `patient` | Personal health records |
+| 💊 **Pharmacist** | `pharmacist1` | `pharmacist1` | Inventory, prescriptions |
+| 🤝 **Receptionist** | `receptionist1` | `receptionist1` | Registration, appointments |
+| 💰 **Accountant** | `accountant1` | `accountant1` | Billing, financial reports |
 
 > ⚠️ **Security Notice:** Change all default passwords immediately in production!
 
