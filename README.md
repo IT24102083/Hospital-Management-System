@@ -226,8 +226,10 @@
 │                    (MySQL Database)                          │
 └─────────────────────────────────────────────────────────────┘
 ```
-
-### **Project Structure**
+---
+## 📂 Project structure
+<details>
+<summary><b>Click Here to expand the project structure </b></summary>
 
 ```
 hospital-management-system/
@@ -304,6 +306,8 @@ hospital-management-system/
 ```
 
 ---
+
+</details>
 
 ## 🚀 Quick Start
 
@@ -517,22 +521,35 @@ java -jar target/hospital-management-system-0.0.1-SNAPSHOT.jar
 
 ## 📸 Screenshots
 
-<div align="center">
+<div align="left">
 
-### 🏠 Landing Page
-*Modern, responsive landing page with service information*
+<details>
+  <summary><b>🏠 Landing Page</b></summary>
+  <p align="center">
+    <img src="https://github.com/IT24102083/Hospital-Management-System/blob/main/UI/Index.png" alt="🏠 Landing Page" width="700">
+  </p>
+</details>
 
-### 📊 Admin Dashboard
-*Comprehensive system overview with real-time statistics*
+<details>
+  <summary><b>💊 Pharmacy Management</b></summary>
+  <p align="center">
+    <img src="https://github.com/IT24102083/Hospital-Management-System/blob/main/UI/Pharmacist%20Dashboard.png" alt="💊 Pharmacy Management" width="700">
+  </p>
+</details>
 
-### 👨‍⚕️ Doctor Portal
-*Appointment management and medical record creation*
+<details>
+  <summary><b>👨‍⚕️ Doctor Portal</b></summary>
+  <p align="center">
+    <img src="https://github.com/IT24102083/Hospital-Management-System/blob/main/UI/Doctor%20Dashboard.png" alt="👨‍⚕️ Doctor Portal" width="700">
+  </p>
+</details>
 
-### 💊 Pharmacy Management
-*Inventory tracking with low-stock alerts*
-
-### 💰 Billing System
-*Invoice management with multiple payment options*
+<details>
+  <summary><b>💰 Billing System</b></summary>
+  <p align="center">
+    <img src="https://github.com/IT24102083/Hospital-Management-System/blob/main/UI/Accountant%20Dashboard.png" alt="💰 Billing System" width="700">
+  </p>
+</details>
 
 </div>
 
